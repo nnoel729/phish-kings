@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phish Setlist Predictor</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #06060f;
+  color: #dde0ff;
+  font-family: Georgia, 'Times New Roman', serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 1rem 3rem;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 15% 40%, rgba(110,0,220,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 15%, rgba(0,130,220,0.15) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 90%, rgba(220,60,0,0.1)  0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 680px;
+}
+
+/* ---------- typography ---------- */
+h1 {
+  text-align: center;
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  color: #c9a2ff;
+  text-shadow: 0 0 28px rgba(200,160,255,.55);
+  letter-spacing: .04em;
+  margin-bottom: .3rem;
+}
+.tagline {
+  text-align: center;
+  color: #7a9aee;
+  font-style: italic;
+  margin-bottom: 1.8rem;
+  font-size: .95rem;
+}
+
+/* ---------- card ---------- */
+.card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(200,160,255,.25);
+  border-radius: 18px;
+  padding: 2rem 1.8rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 40px rgba(0,0,0,.45);
+}
+
+/* ---------- screens ---------- */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ---------- inputs ---------- */
+label {
+  display: block;
+  font-size: .78rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: #8faae0;
+  margin-bottom: .4rem;
+}
+input[type=text] {
+  width: 100%;
+  padding: .72rem 1rem;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(200,160,255,.35);
+  border-radius: 9px;
+  color: #e8eaff;
+  font-size: 1rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+input[type=text]:focus {
+  border-color: #b892ff;
+  box-shadow: 0 0 12px rgba(200,160,255,.3);
+}
+input[type=text]::placeholder { color: #555880; }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: block;
+  width: 100%;
+  padding: .8rem 1.5rem;
+  border: none;
+  border-radius: 9px;
+  font-size: 1rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  margin-top: .6rem;
+}
+.btn:hover  { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(0,0,0,.35); }
+.btn:active { transform: translateY(0); }
+.btn-primary {
+  background: linear-gradient(135deg, #5a00bb, #0055bb);
+  color: #fff;
+}
+.btn-primary:hover { box-shadow: 0 6px 22px rgba(90,0,187,.45); }
+.btn-ghost {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(200,160,255,.25);
+  color: #c0c8f0;
+}
+
+/* ---------- player count picker ---------- */
+.picker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  margin: 1.4rem 0 1rem;
+}
+.pick-btn {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  font-size: 1.6rem;
+  line-height: 1;
+  background: rgba(90,0,187,.4);
+  border: 2px solid rgba(200,160,255,.35);
+  color: #e0d0ff;
+  cursor: pointer;
+  transition: background .2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.pick-btn:hover { background: rgba(90,0,187,.7); }
+.pick-num {
+  font-size: 3.2rem;
+  color: #ffd700;
+  min-width: 3rem;
+  text-align: center;
+  line-height: 1;
+  text-shadow: 0 0 18px rgba(255,215,0,.4);
+}
+
+/* ---------- name inputs ---------- */
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: .65rem;
+}
+.badge {
+  width: 32px; height: 32px; flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(90,0,187,.5);
+  border: 1px solid rgba(200,160,255,.35);
+  display: flex; align-items: center; justify-content: center;
+  color: #c9a2ff;
+  font-size: .82rem;
+}
+.name-row input { margin: 0; flex: 1; }
+
+/* ---------- progress bar ---------- */
+.progress {
+  display: flex;
+  justify-content: center;
+  gap: .55rem;
+  margin-bottom: 1.6rem;
+}
+.pdot {
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  border: 1px solid rgba(200,160,255,.35);
+  background: rgba(200,160,255,.1);
+  cursor: default;
+  position: relative;
+}
+.pdot.done    { background: #5500aa; border-color: #8855dd; }
+.pdot.current { background: #c9a2ff; border-color: #c9a2ff; box-shadow: 0 0 10px rgba(200,160,255,.6); }
+.pdot[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a30;
+  border: 1px solid rgba(200,160,255,.3);
+  border-radius: 5px;
+  padding: .25rem .55rem;
+  white-space: nowrap;
+  font-size: .72rem;
+  color: #c9a2ff;
+  pointer-events: none;
+}
+
+/* ---------- game screen ---------- */
+.cat-label {
+  text-align: center;
+  font-size: 1.3rem;
+  color: #c9a2ff;
+  margin-bottom: .9rem;
+}
+.turn-name {
+  text-align: center;
+  font-size: 1.85rem;
+  color: #ffd700;
+  text-shadow: 0 0 18px rgba(255,215,0,.4);
+  margin-bottom: .25rem;
+}
+.turn-sub {
+  text-align: center;
+  font-size: .83rem;
+  color: #666890;
+  margin-bottom: 1.4rem;
+}
+
+/* ---------- autocomplete ---------- */
+.ac-wrap { position: relative; }
+.ac-list {
+  position: absolute;
+  top: 100%; left: 0; right: 0;
+  background: #11112a;
+  border: 1px solid rgba(200,160,255,.35);
+  border-top: none;
+  border-radius: 0 0 9px 9px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 50;
+  display: none;
+}
+.ac-list.open { display: block; }
+.ac-item {
+  padding: .55rem 1rem;
+  cursor: pointer;
+  font-size: .95rem;
+  transition: background .1s;
+}
+.ac-item:hover, .ac-item.hi { background: rgba(200,160,255,.18); }
+
+/* ---------- round guesses preview ---------- */
+.preview {
+  margin-top: 1.4rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid rgba(200,160,255,.15);
+}
+.preview-title {
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: #777aaa;
+  margin-bottom: .65rem;
+}
+.pg-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: .28rem 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  font-size: .9rem;
+  gap: .5rem;
+}
+.pg-player { color: #c9a2ff; flex-shrink: 0; }
+.pg-song   { color: #ffd700; text-align: right; font-style: italic; }
+
+/* ---------- results ---------- */
+.results-scroll { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .82rem;
+  white-space: nowrap;
+}
+th {
+  background: rgba(90,0,187,.35);
+  padding: .55rem .7rem;
+  color: #c9a2ff;
+  border: 1px solid rgba(200,160,255,.18);
+  text-align: left;
+  font-weight: normal;
+}
+td {
+  padding: .48rem .7rem;
+  border: 1px solid rgba(200,160,255,.1);
+  color: #dde0ff;
+}
+tr:nth-child(even) td { background: rgba(255,255,255,.025); }
+tr:hover td { background: rgba(200,160,255,.07); }
+.td-player { color: #c9a2ff; font-weight: bold; }
+
+/* ---------- helpers ---------- */
+.center { text-align: center; }
+.muted  { color: #66698a; font-size: .85rem; }
+.spacer { height: 1.2rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ════════════════════════════════════════════
+     SCREEN 1 — WELCOME / PLAYER COUNT
+     ════════════════════════════════════════════ -->
+<div id="s-welcome" class="screen active">
+  <h1>🐟 Phish Predictor</h1>
+  <p class="tagline">Guess the setlist before they play</p>
+  <div class="card">
+    <p class="center muted" style="margin-bottom:.3rem">How many players?</p>
+    <div class="picker">
+      <button class="pick-btn" id="btn-minus">−</button>
+      <div class="pick-num" id="pick-num">3</div>
+      <button class="pick-btn" id="btn-plus">+</button>
+    </div>
+    <p class="center muted" style="margin-bottom:1.4rem">2 – 10 players</p>
+    <button class="btn btn-primary" id="btn-to-names">Continue →</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     SCREEN 2 — PLAYER NAMES
+     ════════════════════════════════════════════ -->
+<div id="s-names" class="screen">
+  <h1>🐟 Phish Predictor</h1>
+  <p class="tagline">Enter player names</p>
+  <div class="card">
+    <div id="names-inputs"></div>
+    <div class="spacer"></div>
+    <button class="btn btn-primary" id="btn-start">Let's Predict! 🎵</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     SCREEN 3 — GAME
+     ════════════════════════════════════════════ -->
+<div id="s-game" class="screen">
+  <h1>🐟 Phish Predictor</h1>
+  <div class="card">
+    <div class="progress" id="progress"></div>
+    <div class="cat-label" id="cat-label"></div>
+    <div class="turn-name" id="turn-name"></div>
+    <div class="turn-sub"  id="turn-sub"></div>
+
+    <div class="ac-wrap">
+      <input type="text" id="song-input" placeholder="Start typing a song name…" autocomplete="off">
+      <div class="ac-list" id="ac-list"></div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-submit">Submit Guess ✓</button>
+
+    <div class="preview" id="preview" style="display:none">
+      <div class="preview-title">Guesses so far this round</div>
+      <div id="preview-rows"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     SCREEN 4 — RESULTS
+     ════════════════════════════════════════════ -->
+<div id="s-results" class="screen">
+  <h1>🐟 Phish Predictor</h1>
+  <p class="tagline">All Predictions</p>
+  <div class="card">
+    <div class="results-scroll">
+      <table id="results-table"></table>
+    </div>
+    <button class="btn btn-ghost" id="btn-again" style="margin-top:1.4rem">Play Again 🎸</button>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+// ════════════════════════════════════════════════════════════════
+// SONG LIST  — comprehensive hardcoded list; optionally extended
+//             at runtime from phish.net if CORS allows
+// ════════════════════════════════════════════════════════════════
+let SONGS = [
+  "2001 (Also Sprach Zarathustra)", "46 Days", "A Song I Heard the Ocean Sing",
+  "AC/DC Bag", "Access Me", "Alaska", "Alumni Blues", "Antelope",
+  "Anything But Me", "Army of One", "Axilla", "Axilla (Part II)",
+  "Backwards Down the Number Line", "Bathtub Gin", "Beauty of a Broken Heart",
+  "Beauty of My Dreams", "Big Black Furry Creature from Mars", "Birds of a Feather",
+  "Blaze On", "Bold As Love", "Bouncing Around the Room", "Brain",
+  "Breath and Burning", "Brother", "Buffalo Bill", "Bug", "Buried Alive",
+  "Camel Walk", "Carini", "Cars Trucks Buses", "Cavern", "Chalk Dust Torture",
+  "Character Zero", "Cities", "Colonel Forbin's Ascent", "Corinna",
+  "Crowd Control", "Daniel Saw the Stone", "David Bowie", "Dear Mrs. Reagan",
+  "Demand", "Destiny Unbound", "Devotion to a Dream", "Dirt", "Divided Sky",
+  "Dog Faced Boy", "Dog Log", "Donna Lee", "Down with Disease", "Driver",
+  "Drowned", "Eliza", "Esther", "Everything's Right", "Fast Enough for You",
+  "Fee", "Fire", "First Tube", "Fixin' to Die", "Fluffhead", "Foam",
+  "Frankie Says", "Free", "Fuego", "Ghost", "Glide", "Golden Age",
+  "Golgi Apparatus", "Gotta Jibboo", "Guelah Papyrus", "Gumbo", "Guyute",
+  "Ha Ha Ha", "Halfway to the Moon", "Halley's Comet", "Harpua", "Harry Hood",
+  "Heavy Things", "I Am Hydrogen", "I Didn't Know", "Icculus", "If I Could",
+  "In a Hole", "The Inlaw Josie Wales", "It's Ice", "Joy", "Julius",
+  "Kill Devil Falls", "Kung", "La Grange", "Lawn Boy", "Leaves", "Lengthwise",
+  "Lifeboy", "Light", "Limb by Limb", "Llama", "Loving Cup",
+  "Makisupa Policeman", "Mango Song", "Maze", "McGrupp and the Watchful Hosemasters",
+  "Meatstick", "Mercury", "Mike's Song", "Miss You", "The Moma Dance",
+  "Mound", "Mr. Completely", "My Friend My Friend", "My Sweet One", "N2O",
+  "Nellie Kane", "No Men in No Man's Land", "Ocelot", "Oh Kee Pa Ceremony",
+  "Pebbles and Marbles", "Peaches en Regalia", "Petrichor", "Piper", "Poor Heart",
+  "Possum", "Prince Caspian", "Punch You in the Eye", "Quinn the Eskimo", "Reba",
+  "Rift", "Roggae", "Roses Are Free", "Ruby Waves", "Run Like an Antelope",
+  "Runaway Jim", "Sample in a Jar", "Sand", "Sanity", "Scent of a Mule",
+  "Shade", "Sigma Oasis", "Simple", "Slave to the Traffic Light",
+  "Sneakin' Sally Through the Alley", "Soul Planet", "Sparkle",
+  "Split Open and Melt", "The Squirming Coil", "Stash", "Stealing Time from the Faulty Plan",
+  "Strange Design", "Suzy Greenberg", "Sweet Jane", "Swept Away",
+  "Taste", "The Curtain With", "The Moma Dance", "Timber (Jerry)", "Toast",
+  "Tube", "Tweezer", "Tweezer Reprise", "Twist", "Undermind", "Vultures",
+  "Wading in the Velvet Sea", "Waste", "Water in the Sky", "Weekapaug Groove",
+  "What's the Use?", "When the Circus Comes", "Where the Night Goes",
+  "Whipping Post", "Wilson", "Winterqueen", "Wolfman's Brother", "Wombat",
+  "Ya Mar", "Yarmouth Road", "You Enjoy Myself",
+  // additional
+  "Back on the Train", "Farmhouse", "Gotta Jibboo", "Heavy Things", "Limb by Limb",
+  "Character Zero", "Sleep", "Twist", "Bug", "First Tube", "Pebbles and Marbles",
+  "Mexican Cousin", "Mozambique", "Spreading Santorum", "Spread It Round",
+  "Emotional Rescue", "Loving Cup", "Leader of the Landslide", "Let Me Lie",
+  "Midnight Rider", "More", "Montana", "Driver", "Meat",
+  "Back at the Chicken Shack", "Boogie On Reggae Woman", "Crosseyed and Painless",
+  "Gold Soundz", "Happy Hippie", "Haunted House", "Long Cool Woman",
+  "Midnight Moonlight", "My Generation", "Roses Are Free", "Terrapin",
+  "Time Loves a Hero", "When Something Is Wrong with My Baby",
+].reduce((a, s) => { if (!a.includes(s)) a.push(s); return a; }, []).sort();
+
+// ════════════════════════════════════════════════════════════════
+// CATEGORIES
+// ════════════════════════════════════════════════════════════════
+const CATS = [
+  { emoji: "🎵", label: "Guess the Opener!",            short: "Opener"         },
+  { emoji: "🎸", label: "Guess the First Set Closer!",  short: "1st Set Closer" },
+  { emoji: "🎶", label: "Guess the Second Set Opener!", short: "2nd Set Opener" },
+  { emoji: "🎤", label: "Guess the Second Set Closer!", short: "2nd Set Closer" },
+  { emoji: "✨", label: "Guess an Encore Song!",        short: "Encore"         },
+  { emoji: "💫", label: "Guess a Bustout!",             short: "Bustout"        },
+  { emoji: "🃏", label: "Guess a Wildcard Song!",       short: "Wildcard"       },
+];
+
+// ════════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════════
+let G = {};   // game object, rebuilt each play
+
+function newGame() {
+  G = {
+    playerCount  : G.playerCount || 3,
+    players      : [],
+    // guesses[catIdx][playerIdx] = songString
+    guesses      : Array.from({ length: CATS.length }, () => ({})),
+    catIdx       : 0,
+    order        : [],   // player indices for this round
+    turnIdx      : 0,   // index into order
+    lastPlayer   : null, // player index who went last in prev round
+  };
+}
+newGame();
+
+// ════════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════════
+function $(id) { return document.getElementById(id); }
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ════════════════════════════════════════════════════════════════
+// SCREEN 1 — WELCOME
+// ════════════════════════════════════════════════════════════════
+$('btn-minus').addEventListener('click', () => {
+  if (G.playerCount > 2) { G.playerCount--; $('pick-num').textContent = G.playerCount; }
+});
+$('btn-plus').addEventListener('click', () => {
+  if (G.playerCount < 10) { G.playerCount++; $('pick-num').textContent = G.playerCount; }
+});
+$('btn-to-names').addEventListener('click', () => {
+  buildNamesScreen();
+  showScreen('s-names');
+});
+
+// ════════════════════════════════════════════════════════════════
+// SCREEN 2 — NAMES
+// ════════════════════════════════════════════════════════════════
+function buildNamesScreen() {
+  const c = $('names-inputs');
+  c.innerHTML = '';
+  for (let i = 0; i < G.playerCount; i++) {
+    const row = document.createElement('div');
+    row.className = 'name-row';
+    row.innerHTML = `
+      <div class="badge">${i + 1}</div>
+      <input type="text" id="pname-${i}" placeholder="Player ${i + 1}">
+    `;
+    c.appendChild(row);
+  }
+}
+
+$('btn-start').addEventListener('click', () => {
+  const names = [];
+  for (let i = 0; i < G.playerCount; i++) {
+    const v = $(`pname-${i}`).value.trim();
+    if (!v) { $(`pname-${i}`).focus(); alert(`Enter a name for Player ${i + 1}`); return; }
+    names.push(v);
+  }
+  G.players  = names;
+  G.guesses  = Array.from({ length: CATS.length }, () => ({}));
+  G.catIdx   = 0;
+  G.lastPlayer = null;
+  beginRound();
+  showScreen('s-game');
+});
+
+// ════════════════════════════════════════════════════════════════
+// GAME LOGIC
+// ════════════════════════════════════════════════════════════════
+function beginRound() {
+  const all = Array.from({ length: G.players.length }, (_, i) => i);
+  if (G.lastPlayer !== null) {
+    const rest = shuffle(all.filter(i => i !== G.lastPlayer));
+    G.order = [G.lastPlayer, ...rest];
+  } else {
+    G.order = shuffle(all);
+  }
+  G.turnIdx = 0;
+  renderGame();
+}
+
+function renderGame() {
+  const cat    = CATS[G.catIdx];
+  const pIdx   = G.order[G.turnIdx];
+  const name   = G.players[pIdx];
+  const total  = G.players.length;
+
+  // Progress dots
+  $('progress').innerHTML = CATS.map((c, i) => {
+    let cls = 'pdot';
+    if (i < G.catIdx) cls += ' done';
+    else if (i === G.catIdx) cls += ' current';
+    return `<div class="${cls}" title="${c.short}"></div>`;
+  }).join('');
+
+  $('cat-label').textContent  = `${cat.emoji} ${cat.label}`;
+  $('turn-name').textContent  = `${name}'s turn`;
+  $('turn-sub').textContent   = `Guess ${G.turnIdx + 1} of ${total}`;
+
+  // Clear input
+  $('song-input').value = '';
+  hideAC();
+
+  // Guesses preview
+  const preview = $('preview');
+  if (G.turnIdx > 0) {
+    preview.style.display = 'block';
+    $('preview-rows').innerHTML = G.order.slice(0, G.turnIdx).map(pi => `
+      <div class="pg-row">
+        <span class="pg-player">${G.players[pi]}</span>
+        <span class="pg-song">${G.guesses[G.catIdx][pi] || '—'}</span>
+      </div>
+    `).join('');
+  } else {
+    preview.style.display = 'none';
+  }
+
+  setTimeout(() => $('song-input').focus(), 50);
+}
+
+function submitGuess() {
+  const song = $('song-input').value.trim();
+  if (!song) { $('song-input').focus(); return; }
+
+  const pIdx = G.order[G.turnIdx];
+  G.guesses[G.catIdx][pIdx] = song;
+  G.lastPlayer = pIdx;
+  G.turnIdx++;
+
+  if (G.turnIdx >= G.players.length) {
+    G.catIdx++;
+    if (G.catIdx >= CATS.length) {
+      showResults();
+    } else {
+      beginRound();
+    }
+  } else {
+    renderGame();
+  }
+}
+
+$('btn-submit').addEventListener('click', submitGuess);
+
+// ════════════════════════════════════════════════════════════════
+// AUTOCOMPLETE
+// ════════════════════════════════════════════════════════════════
+const songInput = $('song-input');
+const acList    = $('ac-list');
+let   acActive  = -1;
+
+songInput.addEventListener('input', () => {
+  const q = songInput.value.trim().toLowerCase();
+  if (!q) { hideAC(); return; }
+
+  const hits = SONGS.filter(s => s.toLowerCase().includes(q)).slice(0, 12);
+  if (!hits.length) { hideAC(); return; }
+
+  acList.innerHTML = hits.map(s =>
+    `<div class="ac-item" data-s="${escHtml(s)}">${escHtml(s)}</div>`
+  ).join('');
+
+  acList.querySelectorAll('.ac-item').forEach(el => {
+    el.addEventListener('mousedown', e => { e.preventDefault(); pick(el.dataset.s); });
+    el.addEventListener('mouseenter', () => setAcActive(
+      [...acList.querySelectorAll('.ac-item')].indexOf(el)
+    ));
+  });
+
+  acList.classList.add('open');
+  acActive = -1;
+});
+
+songInput.addEventListener('keydown', e => {
+  const items = [...acList.querySelectorAll('.ac-item')];
+  if (!acList.classList.contains('open')) {
+    if (e.key === 'Enter') submitGuess();
+    return;
+  }
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    setAcActive(Math.min(acActive + 1, items.length - 1));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    setAcActive(Math.max(acActive - 1, -1));
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (acActive >= 0 && items[acActive]) pick(items[acActive].dataset.s);
+    else submitGuess();
+  } else if (e.key === 'Escape') {
+    hideAC();
+  }
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.ac-wrap')) hideAC();
+});
+
+function setAcActive(idx) {
+  const items = [...acList.querySelectorAll('.ac-item')];
+  acActive = idx;
+  items.forEach((el, i) => el.classList.toggle('hi', i === idx));
+  if (idx >= 0 && items[idx]) songInput.value = items[idx].dataset.s;
+}
+
+function pick(song) {
+  songInput.value = song;
+  hideAC();
+  songInput.focus();
+}
+
+function hideAC() {
+  acList.classList.remove('open');
+  acList.innerHTML = '';
+  acActive = -1;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ════════════════════════════════════════════════════════════════
+// RESULTS
+// ════════════════════════════════════════════════════════════════
+function showResults() {
+  const t = $('results-table');
+  const headers = ['Player', ...CATS.map(c => c.short)];
+  const rows = G.players.map((name, pIdx) => {
+    const cells = CATS.map((_, ci) => `<td>${escHtml(G.guesses[ci][pIdx] || '—')}</td>`).join('');
+    return `<tr><td class="td-player">${escHtml(name)}</td>${cells}</tr>`;
+  }).join('');
+  t.innerHTML = `
+    <thead><tr>${headers.map(h => `<th>${escHtml(h)}</th>`).join('')}</tr></thead>
+    <tbody>${rows}</tbody>
+  `;
+  showScreen('s-results');
+}
+
+$('btn-again').addEventListener('click', () => {
+  const count = G.playerCount;
+  newGame();
+  G.playerCount = count;
+  $('pick-num').textContent = count;
+  showScreen('s-welcome');
+});
+
+// ════════════════════════════════════════════════════════════════
+// OPTIONAL: Fetch extended song list from phish.net API
+//           (works only if served with appropriate CORS headers)
+// ════════════════════════════════════════════════════════════════
+(async () => {
+  try {
+    // phish.net v5 public songs endpoint (no key required for read-only song list)
+    const r = await fetch('https://api.phish.net/v5/songs.json', {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok) return;
+    const json = await r.json();
+    const apiSongs = (json.data || []).map(s => s.song).filter(Boolean);
+    if (apiSongs.length > 0) {
+      const merged = [...new Set([...SONGS, ...apiSongs])].sort();
+      SONGS = merged;
+    }
+  } catch (_) { /* silent — hardcoded list is the fallback */ }
+})();
+</script>
+</body>
+</html>
