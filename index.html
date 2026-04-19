@@ -3,383 +3,658 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Phish Setlist Predictor</title>
+<title>PhishKings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+:root {
+  --bg:       #13151c;
+  --surface:  #1e2329;
+  --surface2: #252a33;
+  --border:   #2d3139;
+  --green:    #57d62b;
+  --green-dk: #3fa01f;
+  --gold:     #f0c40a;
+  --text:     #ffffff;
+  --text-2:   #9ea3b0;
+  --text-3:   #5a5f6e;
+  --red:      #e84c3d;
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background: #06060f;
-  color: #dde0ff;
-  font-family: Georgia, 'Times New Roman', serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Barlow', system-ui, sans-serif;
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  padding: 1.5rem 1rem 3rem;
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 15% 40%, rgba(110,0,220,0.18) 0%, transparent 55%),
-    radial-gradient(ellipse at 85% 15%, rgba(0,130,220,0.15) 0%, transparent 55%),
-    radial-gradient(ellipse at 50% 90%, rgba(220,60,0,0.1)  0%, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
 }
 
 .wrap {
-  position: relative;
-  z-index: 1;
   width: 100%;
-  max-width: 680px;
+  max-width: 720px;
 }
 
-/* ---------- typography ---------- */
-h1 {
-  text-align: center;
-  font-size: clamp(1.8rem, 6vw, 2.6rem);
-  color: #c9a2ff;
-  text-shadow: 0 0 28px rgba(200,160,255,.55);
-  letter-spacing: .04em;
-  margin-bottom: .3rem;
-}
-.tagline {
-  text-align: center;
-  color: #7a9aee;
-  font-style: italic;
-  margin-bottom: 1.8rem;
-  font-size: .95rem;
+/* ---- HEADER ---- */
+.site-header {
+  background: #0d0f14;
+  border-bottom: 3px solid var(--green);
+  padding: .9rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-/* ---------- card ---------- */
-.card {
-  background: rgba(255,255,255,.04);
-  border: 1px solid rgba(200,160,255,.25);
-  border-radius: 18px;
-  padding: 2rem 1.8rem;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 10px 40px rgba(0,0,0,.45);
+.logo {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
 }
 
-/* ---------- screens ---------- */
-.screen { display: none; }
+.logo-crown {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--gold);
+}
+
+.logo-text {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 1.65rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text);
+  line-height: 1;
+}
+
+.logo-text em { color: var(--green); font-style: normal; }
+
+.header-nav {
+  display: flex;
+  gap: .4rem;
+}
+
+.nav-btn {
+  padding: .42rem .9rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-2);
+  font-family: 'Barlow', sans-serif;
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  cursor: pointer;
+  transition: all .15s;
+}
+.nav-btn:hover { border-color: var(--green); color: var(--green); }
+.nav-btn.active { background: var(--green); border-color: var(--green); color: #000; }
+
+/* ---- SCREENS ---- */
+.screen { display: none; padding: 1.5rem 1.5rem 4rem; }
 .screen.active { display: block; }
 
-/* ---------- inputs ---------- */
-label {
-  display: block;
-  font-size: .78rem;
+/* ---- PAGE TITLE ---- */
+.page-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 2rem;
   text-transform: uppercase;
-  letter-spacing: .1em;
-  color: #8faae0;
-  margin-bottom: .4rem;
-}
-input[type=text] {
-  width: 100%;
-  padding: .72rem 1rem;
-  background: rgba(255,255,255,.07);
-  border: 1px solid rgba(200,160,255,.35);
-  border-radius: 9px;
-  color: #e8eaff;
-  font-size: 1rem;
-  font-family: inherit;
-  outline: none;
-  transition: border-color .2s, box-shadow .2s;
-}
-input[type=text]:focus {
-  border-color: #b892ff;
-  box-shadow: 0 0 12px rgba(200,160,255,.3);
-}
-input[type=text]::placeholder { color: #555880; }
-
-/* ---------- buttons ---------- */
-.btn {
-  display: block;
-  width: 100%;
-  padding: .8rem 1.5rem;
-  border: none;
-  border-radius: 9px;
-  font-size: 1rem;
-  font-family: inherit;
-  cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
-  margin-top: .6rem;
-}
-.btn:hover  { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(0,0,0,.35); }
-.btn:active { transform: translateY(0); }
-.btn-primary {
-  background: linear-gradient(135deg, #5a00bb, #0055bb);
-  color: #fff;
-}
-.btn-primary:hover { box-shadow: 0 6px 22px rgba(90,0,187,.45); }
-.btn-ghost {
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(200,160,255,.25);
-  color: #c0c8f0;
+  letter-spacing: .04em;
+  margin-bottom: .25rem;
 }
 
-/* ---------- player count picker ---------- */
+.page-sub {
+  color: var(--text-2);
+  font-size: .9rem;
+  margin-bottom: 1.4rem;
+}
+
+/* ---- CARDS ---- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.card-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-2);
+  margin-bottom: 1rem;
+  padding-bottom: .6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ---- PLAYER PICKER ---- */
 .picker {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1.4rem;
-  margin: 1.4rem 0 1rem;
-}
-.pick-btn {
-  width: 52px; height: 52px;
-  border-radius: 50%;
-  font-size: 1.6rem;
-  line-height: 1;
-  background: rgba(90,0,187,.4);
-  border: 2px solid rgba(200,160,255,.35);
-  color: #e0d0ff;
-  cursor: pointer;
-  transition: background .2s;
-  display: flex; align-items: center; justify-content: center;
-}
-.pick-btn:hover { background: rgba(90,0,187,.7); }
-.pick-num {
-  font-size: 3.2rem;
-  color: #ffd700;
-  min-width: 3rem;
-  text-align: center;
-  line-height: 1;
-  text-shadow: 0 0 18px rgba(255,215,0,.4);
+  gap: 2.5rem;
+  margin: 1.4rem 0 1.2rem;
 }
 
-/* ---------- name inputs ---------- */
+.pick-btn {
+  width: 54px; height: 54px;
+  border-radius: 4px;
+  font-size: 1.9rem;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  transition: all .15s;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  line-height: 1;
+}
+.pick-btn:hover { background: var(--green); border-color: var(--green); color: #000; }
+
+.pick-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 4.5rem;
+  color: var(--green);
+  min-width: 4rem;
+  text-align: center;
+  line-height: 1;
+}
+
+/* ---- INPUTS ---- */
+label {
+  display: block;
+  font-size: .73rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-2);
+  margin-bottom: .35rem;
+  font-weight: 700;
+}
+
+input[type=text] {
+  width: 100%;
+  padding: .78rem 1rem;
+  background: #0d0f14;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 1rem;
+  font-family: 'Barlow', sans-serif;
+  outline: none;
+  transition: border-color .2s;
+}
+input[type=text]:focus { border-color: var(--green); }
+input[type=text]::placeholder { color: var(--text-3); }
+
+/* ---- BUTTONS ---- */
+.btn {
+  display: block;
+  width: 100%;
+  padding: .88rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-family: 'Barlow', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .15s;
+  margin-top: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.btn-primary { background: var(--green); color: #000; }
+.btn-primary:hover { background: #68eb38; }
+.btn-primary:active { transform: scale(.99); }
+.btn-primary:disabled { background: var(--green-dk); cursor: default; }
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-2);
+}
+.btn-ghost:hover { border-color: var(--green); color: var(--green); }
+
+.btn-sm {
+  width: auto;
+  display: inline-block;
+  padding: .45rem .95rem;
+  font-size: .78rem;
+  margin-top: 0;
+}
+
+.btn-danger {
+  background: transparent;
+  border: 1px solid #5a1a1a;
+  color: #cc5555;
+}
+.btn-danger:hover { border-color: var(--red); color: var(--red); }
+
+/* ---- NAME ROWS ---- */
 .name-row {
   display: flex;
   align-items: center;
-  gap: .6rem;
-  margin-bottom: .65rem;
+  gap: .7rem;
+  margin-bottom: .6rem;
 }
+
 .badge {
-  width: 32px; height: 32px; flex-shrink: 0;
-  border-radius: 50%;
-  background: rgba(90,0,187,.5);
-  border: 1px solid rgba(200,160,255,.35);
+  width: 34px; height: 34px; flex-shrink: 0;
+  border-radius: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
-  color: #c9a2ff;
-  font-size: .82rem;
+  color: var(--green);
+  font-size: .85rem;
+  font-weight: 700;
+  font-family: 'Barlow Condensed', sans-serif;
 }
 .name-row input { margin: 0; flex: 1; }
 
-/* ---------- progress bar ---------- */
-.progress {
+/* ---- PROGRESS ---- */
+.progress-bar {
   display: flex;
-  justify-content: center;
-  gap: .55rem;
-  margin-bottom: 1.6rem;
+  gap: .25rem;
+  margin-bottom: .5rem;
 }
-.pdot {
-  width: 13px; height: 13px;
-  border-radius: 50%;
-  border: 1px solid rgba(200,160,255,.35);
-  background: rgba(200,160,255,.1);
-  cursor: default;
-  position: relative;
+.pstep {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  transition: background .3s;
 }
-.pdot.done    { background: #5500aa; border-color: #8855dd; }
-.pdot.current { background: #c9a2ff; border-color: #c9a2ff; box-shadow: 0 0 10px rgba(200,160,255,.6); }
-.pdot[title]:hover::after {
-  content: attr(title);
-  position: absolute;
-  bottom: 130%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #1a1a30;
-  border: 1px solid rgba(200,160,255,.3);
-  border-radius: 5px;
-  padding: .25rem .55rem;
-  white-space: nowrap;
+.pstep.done { background: var(--green-dk); }
+.pstep.current { background: var(--green); }
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
   font-size: .72rem;
-  color: #c9a2ff;
-  pointer-events: none;
+  color: var(--text-3);
+  margin-bottom: 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  font-weight: 600;
 }
 
-/* ---------- game screen ---------- */
-.cat-label {
-  text-align: center;
-  font-size: 1.3rem;
-  color: #c9a2ff;
-  margin-bottom: .9rem;
+/* ---- GAME SCREEN ---- */
+.cat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  background: rgba(87,214,43,.1);
+  border: 1px solid rgba(87,214,43,.25);
+  border-radius: 4px;
+  padding: .28rem .75rem;
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-bottom: .85rem;
 }
+
+.pts-badge {
+  background: rgba(240,196,10,.12);
+  border: 1px solid rgba(240,196,10,.3);
+  color: var(--gold);
+  border-radius: 3px;
+  padding: .1rem .4rem;
+  font-size: .7rem;
+  font-weight: 700;
+  margin-left: .3rem;
+}
+
 .turn-name {
-  text-align: center;
-  font-size: 1.85rem;
-  color: #ffd700;
-  text-shadow: 0 0 18px rgba(255,215,0,.4);
-  margin-bottom: .25rem;
-}
-.turn-sub {
-  text-align: center;
-  font-size: .83rem;
-  color: #666890;
-  margin-bottom: 1.4rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 2.4rem;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--gold);
+  margin-bottom: .2rem;
+  line-height: 1;
 }
 
-/* ---------- autocomplete ---------- */
-.ac-wrap { position: relative; }
+.turn-sub {
+  font-size: .85rem;
+  color: var(--text-3);
+  margin-bottom: 1.3rem;
+}
+
+/* ---- AUTOCOMPLETE ---- */
+.ac-wrap { position: relative; margin-bottom: .1rem; }
+
 .ac-list {
   position: absolute;
   top: 100%; left: 0; right: 0;
-  background: #11112a;
-  border: 1px solid rgba(200,160,255,.35);
+  background: #0d0f14;
+  border: 1px solid var(--green);
   border-top: none;
-  border-radius: 0 0 9px 9px;
-  max-height: 220px;
+  border-radius: 0 0 4px 4px;
+  max-height: 240px;
   overflow-y: auto;
   z-index: 50;
   display: none;
 }
 .ac-list.open { display: block; }
+
 .ac-item {
-  padding: .55rem 1rem;
+  padding: .58rem 1rem;
   cursor: pointer;
   font-size: .95rem;
   transition: background .1s;
+  border-bottom: 1px solid var(--border);
 }
-.ac-item:hover, .ac-item.hi { background: rgba(200,160,255,.18); }
+.ac-item:last-child { border-bottom: none; }
+.ac-item:hover, .ac-item.hi { background: rgba(87,214,43,.1); color: var(--green); }
 
-/* ---------- round guesses preview ---------- */
-.preview {
-  margin-top: 1.4rem;
-  padding-top: 1.2rem;
-  border-top: 1px solid rgba(200,160,255,.15);
+.ac-item.used {
+  color: var(--text-3);
+  cursor: not-allowed;
+  background: rgba(0,0,0,.2);
 }
+.ac-item.used:hover { background: rgba(0,0,0,.2); color: var(--text-3); }
+
+.ac-taken-tag {
+  float: right;
+  font-size: .7rem;
+  background: var(--border);
+  border-radius: 3px;
+  padding: .1rem .4rem;
+  color: var(--text-3);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+/* ---- GUESS PREVIEW ---- */
+.preview {
+  margin-top: 1.3rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--border);
+}
+
 .preview-title {
-  font-size: .75rem;
+  font-size: .72rem;
   text-transform: uppercase;
   letter-spacing: .1em;
-  color: #777aaa;
-  margin-bottom: .65rem;
+  color: var(--text-3);
+  margin-bottom: .6rem;
+  font-weight: 700;
 }
+
 .pg-row {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  padding: .28rem 0;
+  align-items: center;
+  padding: .38rem 0;
   border-bottom: 1px solid rgba(255,255,255,.04);
   font-size: .9rem;
   gap: .5rem;
 }
-.pg-player { color: #c9a2ff; flex-shrink: 0; }
-.pg-song   { color: #ffd700; text-align: right; font-style: italic; }
+.pg-row:last-child { border-bottom: none; }
+.pg-player { color: var(--text-2); font-weight: 600; flex-shrink: 0; }
+.pg-song   { color: var(--gold); text-align: right; font-style: italic; }
 
-/* ---------- results ---------- */
-.results-scroll { overflow-x: auto; }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: .82rem;
-  white-space: nowrap;
-}
+/* ---- RESULTS TABLE ---- */
+.results-scroll { overflow-x: auto; margin: 0 -1.4rem; padding: 0 1.4rem; }
+
+table { width: 100%; border-collapse: collapse; font-size: .83rem; white-space: nowrap; }
+thead tr { background: #0d0f14; }
+
 th {
-  background: rgba(90,0,187,.35);
-  padding: .55rem .7rem;
-  color: #c9a2ff;
-  border: 1px solid rgba(200,160,255,.18);
+  padding: .6rem .8rem;
+  color: var(--green);
+  border: 1px solid var(--border);
   text-align: left;
-  font-weight: normal;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: .72rem;
+  letter-spacing: .06em;
 }
-td {
-  padding: .48rem .7rem;
-  border: 1px solid rgba(200,160,255,.1);
-  color: #dde0ff;
-}
-tr:nth-child(even) td { background: rgba(255,255,255,.025); }
-tr:hover td { background: rgba(200,160,255,.07); }
-.td-player { color: #c9a2ff; font-weight: bold; }
 
-/* ---------- helpers ---------- */
+td {
+  padding: .52rem .8rem;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+tr:hover td { background: rgba(87,214,43,.04); }
+.td-player { color: var(--text); font-weight: 700; }
+.td-correct { color: var(--green); font-weight: 700; }
+.td-wrong   { color: var(--text-3); }
+
+/* ---- SCORE INPUTS ---- */
+.score-row {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-bottom: .6rem;
+}
+.score-cat {
+  width: 125px;
+  flex-shrink: 0;
+  font-size: .78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-2);
+  letter-spacing: .05em;
+}
+.score-row input { flex: 1; margin: 0; }
+
+/* ---- LEADERBOARD ---- */
+.lb-row {
+  display: flex;
+  align-items: center;
+  padding: .8rem 0;
+  border-bottom: 1px solid var(--border);
+  gap: 1rem;
+}
+.lb-row:last-child { border-bottom: none; }
+
+.lb-rank {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 900;
+  font-size: 1.5rem;
+  width: 2rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+.lb-rank.r1 { color: var(--gold); }
+.lb-rank.r2 { color: #c0c0c0; }
+.lb-rank.r3 { color: #cd7f32; }
+.lb-rank.rn { color: var(--text-3); }
+
+.lb-info { flex: 1; }
+.lb-name { font-weight: 700; font-size: 1rem; }
+.lb-detail { font-size: .78rem; color: var(--text-3); margin-top: .1rem; }
+
+.lb-pts { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 1.6rem; color: var(--green); }
+.lb-pts-label { font-size: .68rem; color: var(--text-3); text-align: right; }
+
+/* ---- CHIPS ---- */
+.score-chip {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(87,214,43,.15);
+  border: 1px solid rgba(87,214,43,.3);
+  border-radius: 3px;
+  padding: .12rem .45rem;
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--green);
+  margin-left: .4rem;
+  font-family: 'Barlow', sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ---- HELPERS ---- */
 .center { text-align: center; }
-.muted  { color: #66698a; font-size: .85rem; }
-.spacer { height: 1.2rem; }
+.muted  { color: var(--text-2); font-size: .9rem; }
+.spacer { height: 1rem; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 1.2rem 0; }
+.tr-right { text-align: right; }
+
+.empty-state {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--text-3);
+}
+.empty-icon { font-size: 2.8rem; margin-bottom: .75rem; }
+.empty-state p { font-size: .9rem; line-height: 1.5; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<!-- ════════════════════════════════════════════
-     SCREEN 1 — WELCOME / PLAYER COUNT
-     ════════════════════════════════════════════ -->
-<div id="s-welcome" class="screen active">
-  <h1>🐟 Phish Predictor</h1>
-  <p class="tagline">Guess the setlist before they play</p>
+<!-- ═══════ HEADER ═══════ -->
+<header class="site-header">
+  <div class="logo">
+    <span class="logo-crown">♛</span>
+    <div class="logo-text">Phish<em>Kings</em></div>
+  </div>
+  <div class="header-nav">
+    <button class="nav-btn active" id="nav-play" onclick="navTo('play')">Play</button>
+    <button class="nav-btn" id="nav-stats" onclick="navTo('stats')">All-Time Stats</button>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════
+     ALL-TIME STATS
+     ═══════════════════════════════════════════ -->
+<div id="s-alltime" class="screen">
+  <div class="page-title">All-Time Leaderboard</div>
+  <p class="page-sub">Points accumulated across all scored sessions</p>
+
   <div class="card">
-    <p class="center muted" style="margin-bottom:.3rem">How many players?</p>
+    <div class="card-title">Top Players</div>
+    <div id="lb-list"></div>
+  </div>
+
+  <div class="tr-right">
+    <button class="btn btn-danger btn-sm" onclick="clearStats()">Reset All-Time Stats</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 1 — WELCOME
+     ═══════════════════════════════════════════ -->
+<div id="s-welcome" class="screen active">
+  <div class="page-title">Draft Your Picks</div>
+  <p class="page-sub">Guess the setlist before they play</p>
+
+  <div class="card">
+    <div class="card-title">How Many Players?</div>
     <div class="picker">
       <button class="pick-btn" id="btn-minus">−</button>
       <div class="pick-num" id="pick-num">3</div>
       <button class="pick-btn" id="btn-plus">+</button>
     </div>
-    <p class="center muted" style="margin-bottom:1.4rem">2 – 10 players</p>
+    <p class="center muted" style="margin-bottom:1.2rem">2 – 10 players</p>
     <button class="btn btn-primary" id="btn-to-names">Continue →</button>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════
+<!-- ═══════════════════════════════════════════
      SCREEN 2 — PLAYER NAMES
-     ════════════════════════════════════════════ -->
+     ═══════════════════════════════════════════ -->
 <div id="s-names" class="screen">
-  <h1>🐟 Phish Predictor</h1>
-  <p class="tagline">Enter player names</p>
+  <div class="page-title">Enter Lineups</div>
+  <p class="page-sub">Who's playing tonight?</p>
+
   <div class="card">
+    <div class="card-title">Player Names</div>
     <div id="names-inputs"></div>
     <div class="spacer"></div>
-    <button class="btn btn-primary" id="btn-start">Let's Predict! 🎵</button>
+    <button class="btn btn-primary" id="btn-start">Lock In Lineups →</button>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════
+<!-- ═══════════════════════════════════════════
      SCREEN 3 — GAME
-     ════════════════════════════════════════════ -->
+     ═══════════════════════════════════════════ -->
 <div id="s-game" class="screen">
-  <h1>🐟 Phish Predictor</h1>
   <div class="card">
-    <div class="progress" id="progress"></div>
-    <div class="cat-label" id="cat-label"></div>
+    <div class="progress-bar" id="progress-bar"></div>
+    <div class="progress-label">
+      <span id="prog-cat-label">Round 1</span>
+      <span id="prog-step-label">Pick 1 of 3</span>
+    </div>
+
+    <div><span class="cat-badge" id="cat-badge"></span></div>
     <div class="turn-name" id="turn-name"></div>
-    <div class="turn-sub"  id="turn-sub"></div>
+    <div class="turn-sub" id="turn-sub"></div>
 
     <div class="ac-wrap">
+      <label>Song Pick</label>
       <input type="text" id="song-input" placeholder="Start typing a song name…" autocomplete="off">
       <div class="ac-list" id="ac-list"></div>
     </div>
 
-    <button class="btn btn-primary" id="btn-submit">Submit Guess ✓</button>
+    <button class="btn btn-primary" id="btn-submit">Submit Pick ✓</button>
 
     <div class="preview" id="preview" style="display:none">
-      <div class="preview-title">Guesses so far this round</div>
+      <div class="preview-title">Picks so far this round</div>
       <div id="preview-rows"></div>
     </div>
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════
-     SCREEN 4 — RESULTS
-     ════════════════════════════════════════════ -->
-<div id="s-results" class="screen">
-  <h1>🐟 Phish Predictor</h1>
-  <p class="tagline">All Predictions</p>
+<!-- ═══════════════════════════════════════════
+     SCREEN 4 — SCORE THE SHOW
+     ═══════════════════════════════════════════ -->
+<div id="s-score" class="screen">
+  <div class="page-title">Score the Show</div>
+  <p class="page-sub">Enter what Phish actually played to calculate points</p>
+
   <div class="card">
+    <div class="card-title">All Picks</div>
     <div class="results-scroll">
       <table id="results-table"></table>
     </div>
-    <button class="btn btn-ghost" id="btn-again" style="margin-top:1.4rem">Play Again 🎸</button>
   </div>
+
+  <div class="card">
+    <div class="card-title">Actual Setlist · Enter to Score</div>
+    <p class="muted" style="margin-bottom:1rem;font-size:.85rem">
+      Type what Phish actually played. Exact match = points.
+      Bustout = <strong style="color:var(--gold)">3×</strong> · Wildcard = <strong style="color:var(--gold)">2×</strong>
+    </p>
+    <div id="score-inputs"></div>
+    <button class="btn btn-primary" id="btn-calc">Calculate Scores →</button>
+  </div>
+
+  <div class="card" id="final-scores-card" style="display:none">
+    <div class="card-title">Final Scores</div>
+    <div id="final-scores-list"></div>
+    <div class="divider"></div>
+    <button class="btn btn-primary" id="btn-save-stats">Save to All-Time Stats ★</button>
+    <button class="btn btn-ghost" id="btn-again" style="margin-top:.5rem">Play Again</button>
+  </div>
+
+  <button class="btn btn-ghost" id="btn-skip-score" style="margin-top:.5rem">Skip Scoring / Play Again</button>
 </div>
 
 </div><!-- /wrap -->
 
 <script>
 // ════════════════════════════════════════════════════════════════
-// SONG LIST  — comprehensive hardcoded list; optionally extended
-//             at runtime from phish.net if CORS allows
+// SONG LIST
 // ════════════════════════════════════════════════════════════════
 let SONGS = [
   "2001 (Also Sprach Zarathustra)", "46 Days", "A Song I Heard the Ocean Sing",
@@ -413,57 +688,137 @@ let SONGS = [
   "Runaway Jim", "Sample in a Jar", "Sand", "Sanity", "Scent of a Mule",
   "Shade", "Sigma Oasis", "Simple", "Slave to the Traffic Light",
   "Sneakin' Sally Through the Alley", "Soul Planet", "Sparkle",
-  "Split Open and Melt", "The Squirming Coil", "Stash", "Stealing Time from the Faulty Plan",
-  "Strange Design", "Suzy Greenberg", "Sweet Jane", "Swept Away",
-  "Taste", "The Curtain With", "The Moma Dance", "Timber (Jerry)", "Toast",
-  "Tube", "Tweezer", "Tweezer Reprise", "Twist", "Undermind", "Vultures",
-  "Wading in the Velvet Sea", "Waste", "Water in the Sky", "Weekapaug Groove",
-  "What's the Use?", "When the Circus Comes", "Where the Night Goes",
-  "Whipping Post", "Wilson", "Winterqueen", "Wolfman's Brother", "Wombat",
-  "Ya Mar", "Yarmouth Road", "You Enjoy Myself",
-  // additional
-  "Back on the Train", "Farmhouse", "Gotta Jibboo", "Heavy Things", "Limb by Limb",
-  "Character Zero", "Sleep", "Twist", "Bug", "First Tube", "Pebbles and Marbles",
+  "Split Open and Melt", "The Squirming Coil", "Stash",
+  "Stealing Time from the Faulty Plan", "Strange Design", "Suzy Greenberg",
+  "Sweet Jane", "Swept Away", "Taste", "The Curtain With",
+  "Timber (Jerry)", "Toast", "Tube", "Tweezer", "Tweezer Reprise", "Twist",
+  "Undermind", "Vultures", "Wading in the Velvet Sea", "Waste",
+  "Water in the Sky", "Weekapaug Groove", "What's the Use?",
+  "When the Circus Comes", "Where the Night Goes", "Whipping Post", "Wilson",
+  "Winterqueen", "Wolfman's Brother", "Wombat", "Ya Mar", "Yarmouth Road",
+  "You Enjoy Myself", "Back on the Train", "Farmhouse", "Sleep",
   "Mexican Cousin", "Mozambique", "Spreading Santorum", "Spread It Round",
-  "Emotional Rescue", "Loving Cup", "Leader of the Landslide", "Let Me Lie",
-  "Midnight Rider", "More", "Montana", "Driver", "Meat",
-  "Back at the Chicken Shack", "Boogie On Reggae Woman", "Crosseyed and Painless",
-  "Gold Soundz", "Happy Hippie", "Haunted House", "Long Cool Woman",
-  "Midnight Moonlight", "My Generation", "Roses Are Free", "Terrapin",
-  "Time Loves a Hero", "When Something Is Wrong with My Baby",
+  "Emotional Rescue", "Leader of the Landslide", "Let Me Lie",
+  "Midnight Rider", "More", "Montana", "Meat", "Back at the Chicken Shack",
+  "Boogie On Reggae Woman", "Crosseyed and Painless", "Gold Soundz",
+  "Happy Hippie", "Haunted House", "Long Cool Woman", "Midnight Moonlight",
+  "My Generation", "Terrapin", "Time Loves a Hero",
+  "When Something Is Wrong with My Baby",
 ].reduce((a, s) => { if (!a.includes(s)) a.push(s); return a; }, []).sort();
 
 // ════════════════════════════════════════════════════════════════
 // CATEGORIES
 // ════════════════════════════════════════════════════════════════
 const CATS = [
-  { emoji: "🎵", label: "Guess the Opener!",            short: "Opener"         },
-  { emoji: "🎸", label: "Guess the First Set Closer!",  short: "1st Set Closer" },
-  { emoji: "🎶", label: "Guess the Second Set Opener!", short: "2nd Set Opener" },
-  { emoji: "🎤", label: "Guess the Second Set Closer!", short: "2nd Set Closer" },
-  { emoji: "✨", label: "Guess an Encore Song!",        short: "Encore"         },
-  { emoji: "💫", label: "Guess a Bustout!",             short: "Bustout"        },
-  { emoji: "🃏", label: "Guess a Wildcard Song!",       short: "Wildcard"       },
+  { emoji: "🎵", label: "Show Opener",      short: "Opener",    pts: 1 },
+  { emoji: "🎸", label: "Set 1 Closer",     short: "S1 Closer", pts: 1 },
+  { emoji: "🎶", label: "Set 2 Opener",     short: "S2 Opener", pts: 1 },
+  { emoji: "🎤", label: "Set 2 Closer",     short: "S2 Closer", pts: 1 },
+  { emoji: "✨", label: "Encore Song",      short: "Encore",    pts: 1 },
+  { emoji: "💎", label: "Bustout",          short: "Bustout",   pts: 3 },
+  { emoji: "🃏", label: "Wildcard Song",    short: "Wildcard",  pts: 2 },
 ];
 
 // ════════════════════════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════════════════════════
-let G = {};   // game object, rebuilt each play
+let G = {};
 
 function newGame() {
   G = {
     playerCount  : G.playerCount || 3,
     players      : [],
-    // guesses[catIdx][playerIdx] = songString
     guesses      : Array.from({ length: CATS.length }, () => ({})),
     catIdx       : 0,
-    order        : [],   // player indices for this round
-    turnIdx      : 0,   // index into order
-    lastPlayer   : null, // player index who went last in prev round
+    order        : [],
+    turnIdx      : 0,
+    lastPlayer   : null,
+    usedSongs    : new Set(),
+    sessionScores: null,
+    statsSaved   : false,
   };
 }
 newGame();
+
+// ════════════════════════════════════════════════════════════════
+// ALL-TIME STATS
+// ════════════════════════════════════════════════════════════════
+const STATS_KEY = 'phishkings_alltime_v1';
+
+function loadStats() {
+  try { return JSON.parse(localStorage.getItem(STATS_KEY)) || {}; }
+  catch (_) { return {}; }
+}
+
+function saveStats(stats) {
+  localStorage.setItem(STATS_KEY, JSON.stringify(stats));
+}
+
+function addSessionToStats(scores) {
+  const stats = loadStats();
+  scores.forEach(({ name, pts, correct, total }) => {
+    if (!stats[name]) stats[name] = { pts: 0, correct: 0, total: 0, sessions: 0 };
+    stats[name].pts     += pts;
+    stats[name].correct += correct;
+    stats[name].total   += total;
+    stats[name].sessions++;
+  });
+  saveStats(stats);
+}
+
+function clearStats() {
+  if (!confirm('Reset ALL all-time stats? This cannot be undone.')) return;
+  localStorage.removeItem(STATS_KEY);
+  renderLeaderboard();
+}
+
+function renderLeaderboard() {
+  const stats = loadStats();
+  const lb = $('lb-list');
+  const entries = Object.entries(stats)
+    .map(([name, d]) => ({ name, ...d }))
+    .sort((a, b) => b.pts - a.pts);
+
+  if (!entries.length) {
+    lb.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">♛</div>
+        <p>No stats yet.<br>Play a game and save your scores to start tracking!</p>
+      </div>`;
+    return;
+  }
+
+  lb.innerHTML = entries.map((e, i) => {
+    const cls = ['r1','r2','r3'][i] || 'rn';
+    const pct = e.total ? Math.round(e.correct / e.total * 100) : 0;
+    return `
+      <div class="lb-row">
+        <div class="lb-rank ${cls}">${i + 1}</div>
+        <div class="lb-info">
+          <div class="lb-name">${escHtml(e.name)}</div>
+          <div class="lb-detail">${e.sessions} session${e.sessions !== 1 ? 's' : ''} &middot; ${e.correct}/${e.total} correct (${pct}%)</div>
+        </div>
+        <div>
+          <div class="lb-pts">${e.pts}</div>
+          <div class="lb-pts-label">PTS</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ════════════════════════════════════════════════════════════════
+function navTo(tab) {
+  $('nav-play').classList.toggle('active', tab === 'play');
+  $('nav-stats').classList.toggle('active', tab === 'stats');
+  if (tab === 'stats') {
+    renderLeaderboard();
+    showScreen('s-alltime');
+  } else {
+    showScreen('s-welcome');
+  }
+}
 
 // ════════════════════════════════════════════════════════════════
 // HELPERS
@@ -483,6 +838,16 @@ function shuffle(arr) {
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function normalize(s) {
+  return s.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -523,10 +888,12 @@ $('btn-start').addEventListener('click', () => {
     if (!v) { $(`pname-${i}`).focus(); alert(`Enter a name for Player ${i + 1}`); return; }
     names.push(v);
   }
-  G.players  = names;
-  G.guesses  = Array.from({ length: CATS.length }, () => ({}));
-  G.catIdx   = 0;
+  G.players    = names;
+  G.guesses    = Array.from({ length: CATS.length }, () => ({}));
+  G.catIdx     = 0;
   G.lastPlayer = null;
+  G.usedSongs  = new Set();
+  G.statsSaved = false;
   beginRound();
   showScreen('s-game');
 });
@@ -547,35 +914,35 @@ function beginRound() {
 }
 
 function renderGame() {
-  const cat    = CATS[G.catIdx];
-  const pIdx   = G.order[G.turnIdx];
-  const name   = G.players[pIdx];
-  const total  = G.players.length;
+  const cat  = CATS[G.catIdx];
+  const pIdx = G.order[G.turnIdx];
+  const name = G.players[pIdx];
 
-  // Progress dots
-  $('progress').innerHTML = CATS.map((c, i) => {
-    let cls = 'pdot';
+  $('progress-bar').innerHTML = CATS.map((_, i) => {
+    let cls = 'pstep';
     if (i < G.catIdx) cls += ' done';
     else if (i === G.catIdx) cls += ' current';
-    return `<div class="${cls}" title="${c.short}"></div>`;
+    return `<div class="${cls}"></div>`;
   }).join('');
 
-  $('cat-label').textContent  = `${cat.emoji} ${cat.label}`;
-  $('turn-name').textContent  = `${name}'s turn`;
-  $('turn-sub').textContent   = `Guess ${G.turnIdx + 1} of ${total}`;
+  $('prog-cat-label').textContent  = `${cat.emoji} ${cat.label}`;
+  $('prog-step-label').textContent = `Pick ${G.turnIdx + 1} of ${G.players.length}`;
 
-  // Clear input
+  const ptsLabel = cat.pts === 1 ? '1 pt' : `${cat.pts} pts`;
+  $('cat-badge').innerHTML = `${cat.emoji} ${cat.label} <span class="pts-badge">${ptsLabel}</span>`;
+  $('turn-name').textContent = name.toUpperCase();
+  $('turn-sub').textContent  = `Round ${G.catIdx + 1} of ${CATS.length}`;
+
   $('song-input').value = '';
   hideAC();
 
-  // Guesses preview
   const preview = $('preview');
   if (G.turnIdx > 0) {
     preview.style.display = 'block';
     $('preview-rows').innerHTML = G.order.slice(0, G.turnIdx).map(pi => `
       <div class="pg-row">
-        <span class="pg-player">${G.players[pi]}</span>
-        <span class="pg-song">${G.guesses[G.catIdx][pi] || '—'}</span>
+        <span class="pg-player">${escHtml(G.players[pi])}</span>
+        <span class="pg-song">${escHtml(G.guesses[G.catIdx][pi] || '—')}</span>
       </div>
     `).join('');
   } else {
@@ -589,15 +956,22 @@ function submitGuess() {
   const song = $('song-input').value.trim();
   if (!song) { $('song-input').focus(); return; }
 
+  if (G.usedSongs.has(normalize(song))) {
+    alert(`"${song}" has already been guessed this session. Choose a different song!`);
+    $('song-input').select();
+    return;
+  }
+
   const pIdx = G.order[G.turnIdx];
   G.guesses[G.catIdx][pIdx] = song;
+  G.usedSongs.add(normalize(song));
   G.lastPlayer = pIdx;
   G.turnIdx++;
 
   if (G.turnIdx >= G.players.length) {
     G.catIdx++;
     if (G.catIdx >= CATS.length) {
-      showResults();
+      showScoreScreen();
     } else {
       beginRound();
     }
@@ -609,7 +983,7 @@ function submitGuess() {
 $('btn-submit').addEventListener('click', submitGuess);
 
 // ════════════════════════════════════════════════════════════════
-// AUTOCOMPLETE
+// AUTOCOMPLETE  — greys out already-guessed songs
 // ════════════════════════════════════════════════════════════════
 const songInput = $('song-input');
 const acList    = $('ac-list');
@@ -619,18 +993,22 @@ songInput.addEventListener('input', () => {
   const q = songInput.value.trim().toLowerCase();
   if (!q) { hideAC(); return; }
 
-  const hits = SONGS.filter(s => s.toLowerCase().includes(q)).slice(0, 12);
+  const hits = SONGS.filter(s => s.toLowerCase().includes(q)).slice(0, 15);
   if (!hits.length) { hideAC(); return; }
 
-  acList.innerHTML = hits.map(s =>
-    `<div class="ac-item" data-s="${escHtml(s)}">${escHtml(s)}</div>`
-  ).join('');
+  acList.innerHTML = hits.map(s => {
+    const used = G.usedSongs.has(normalize(s));
+    return `<div class="ac-item${used ? ' used' : ''}" data-s="${escHtml(s)}" data-used="${used}">
+      ${escHtml(s)}${used ? '<span class="ac-taken-tag">Taken</span>' : ''}
+    </div>`;
+  }).join('');
 
-  acList.querySelectorAll('.ac-item').forEach(el => {
+  acList.querySelectorAll('.ac-item:not(.used)').forEach(el => {
     el.addEventListener('mousedown', e => { e.preventDefault(); pick(el.dataset.s); });
-    el.addEventListener('mouseenter', () => setAcActive(
-      [...acList.querySelectorAll('.ac-item')].indexOf(el)
-    ));
+    el.addEventListener('mouseenter', () => {
+      const avail = [...acList.querySelectorAll('.ac-item:not(.used)')];
+      setAcActive(avail.indexOf(el));
+    });
   });
 
   acList.classList.add('open');
@@ -638,20 +1016,20 @@ songInput.addEventListener('input', () => {
 });
 
 songInput.addEventListener('keydown', e => {
-  const items = [...acList.querySelectorAll('.ac-item')];
+  const avail = [...acList.querySelectorAll('.ac-item:not(.used)')];
   if (!acList.classList.contains('open')) {
     if (e.key === 'Enter') submitGuess();
     return;
   }
   if (e.key === 'ArrowDown') {
     e.preventDefault();
-    setAcActive(Math.min(acActive + 1, items.length - 1));
+    setAcActive(Math.min(acActive + 1, avail.length - 1));
   } else if (e.key === 'ArrowUp') {
     e.preventDefault();
     setAcActive(Math.max(acActive - 1, -1));
   } else if (e.key === 'Enter') {
     e.preventDefault();
-    if (acActive >= 0 && items[acActive]) pick(items[acActive].dataset.s);
+    if (acActive >= 0 && avail[acActive]) pick(avail[acActive].dataset.s);
     else submitGuess();
   } else if (e.key === 'Escape') {
     hideAC();
@@ -663,10 +1041,10 @@ document.addEventListener('click', e => {
 });
 
 function setAcActive(idx) {
-  const items = [...acList.querySelectorAll('.ac-item')];
+  const avail = [...acList.querySelectorAll('.ac-item:not(.used)')];
   acActive = idx;
-  items.forEach((el, i) => el.classList.toggle('hi', i === idx));
-  if (idx >= 0 && items[idx]) songInput.value = items[idx].dataset.s;
+  avail.forEach((el, i) => el.classList.toggle('hi', i === idx));
+  if (idx >= 0 && avail[idx]) songInput.value = avail[idx].dataset.s;
 }
 
 function pick(song) {
@@ -681,53 +1059,127 @@ function hideAC() {
   acActive = -1;
 }
 
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
 // ════════════════════════════════════════════════════════════════
-// RESULTS
+// SCORE SCREEN
 // ════════════════════════════════════════════════════════════════
-function showResults() {
-  const t = $('results-table');
+function buildResultsTable(actuals, scores) {
+  const normActuals = (actuals || []).map(normalize);
   const headers = ['Player', ...CATS.map(c => c.short)];
+
   const rows = G.players.map((name, pIdx) => {
-    const cells = CATS.map((_, ci) => `<td>${escHtml(G.guesses[ci][pIdx] || '—')}</td>`).join('');
-    return `<tr><td class="td-player">${escHtml(name)}</td>${cells}</tr>`;
+    const cells = CATS.map((_, ci) => {
+      const guess = G.guesses[ci][pIdx] || '—';
+      if (!actuals) return `<td>${escHtml(guess)}</td>`;
+      const correct = normActuals[ci] && normalize(guess) === normActuals[ci];
+      const cls = actuals[ci] ? (correct ? 'td-correct' : 'td-wrong') : '';
+      return `<td class="${cls}">${escHtml(guess)}${correct ? ' ✓' : ''}</td>`;
+    }).join('');
+
+    const chip = scores
+      ? `<span class="score-chip">${scores[pIdx].pts} pts</span>`
+      : '';
+    return `<tr><td class="td-player">${escHtml(name)}${chip}</td>${cells}</tr>`;
   }).join('');
-  t.innerHTML = `
+
+  return `
     <thead><tr>${headers.map(h => `<th>${escHtml(h)}</th>`).join('')}</tr></thead>
     <tbody>${rows}</tbody>
   `;
-  showScreen('s-results');
 }
 
-$('btn-again').addEventListener('click', () => {
+function showScoreScreen() {
+  $('results-table').innerHTML = buildResultsTable(null, null);
+
+  $('score-inputs').innerHTML = CATS.map((c, i) => `
+    <div class="score-row">
+      <div class="score-cat">${c.emoji} ${c.short}</div>
+      <input type="text" id="actual-${i}" placeholder="Actual song played…" autocomplete="off">
+    </div>
+  `).join('');
+
+  $('final-scores-card').style.display = 'none';
+  $('btn-save-stats').textContent = 'Save to All-Time Stats ★';
+  $('btn-save-stats').disabled = false;
+  $('btn-save-stats').style.background = '';
+
+  showScreen('s-score');
+}
+
+$('btn-calc').addEventListener('click', () => {
+  const actuals     = CATS.map((_, i) => ($(`actual-${i}`).value.trim()));
+  const normActuals = actuals.map(normalize);
+
+  const scores = G.players.map((name, pIdx) => {
+    let pts = 0, correct = 0;
+    CATS.forEach((cat, ci) => {
+      const guess = G.guesses[ci][pIdx] || '';
+      if (normActuals[ci] && normalize(guess) === normActuals[ci]) {
+        pts += cat.pts;
+        correct++;
+      }
+    });
+    return { name, pts, correct, total: CATS.length };
+  });
+
+  G.sessionScores = scores;
+
+  $('results-table').innerHTML = buildResultsTable(actuals, scores);
+
+  const sorted = [...scores].sort((a, b) => b.pts - a.pts);
+  $('final-scores-list').innerHTML = sorted.map((s, i) => {
+    const cls = ['r1','r2','r3'][i] || 'rn';
+    return `
+      <div class="lb-row">
+        <div class="lb-rank ${cls}">${i + 1}</div>
+        <div class="lb-info">
+          <div class="lb-name">${escHtml(s.name)}</div>
+          <div class="lb-detail">${s.correct} correct of ${s.total}</div>
+        </div>
+        <div>
+          <div class="lb-pts">${s.pts}</div>
+          <div class="lb-pts-label">PTS</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  $('final-scores-card').style.display = 'block';
+  $('final-scores-card').scrollIntoView({ behavior: 'smooth' });
+});
+
+$('btn-save-stats').addEventListener('click', () => {
+  if (!G.sessionScores || G.statsSaved) return;
+  addSessionToStats(G.sessionScores);
+  G.statsSaved = true;
+  const btn = $('btn-save-stats');
+  btn.textContent = 'Saved! ✓';
+  btn.disabled = true;
+  btn.style.background = 'var(--green-dk)';
+});
+
+$('btn-again').addEventListener('click', resetAndPlayAgain);
+$('btn-skip-score').addEventListener('click', resetAndPlayAgain);
+
+function resetAndPlayAgain() {
   const count = G.playerCount;
   newGame();
   G.playerCount = count;
   $('pick-num').textContent = count;
-  showScreen('s-welcome');
-});
+  navTo('play');
+}
 
 // ════════════════════════════════════════════════════════════════
-// OPTIONAL: Fetch extended song list from phish.net API
-//           (works only if served with appropriate CORS headers)
+// OPTIONAL: Extend song list from phish.net API
 // ════════════════════════════════════════════════════════════════
 (async () => {
   try {
-    // phish.net v5 public songs endpoint (no key required for read-only song list)
     const r = await fetch('https://api.phish.net/v5/songs.json', {
       signal: AbortSignal.timeout(5000),
     });
     if (!r.ok) return;
     const json = await r.json();
     const apiSongs = (json.data || []).map(s => s.song).filter(Boolean);
-    if (apiSongs.length > 0) {
-      const merged = [...new Set([...SONGS, ...apiSongs])].sort();
-      SONGS = merged;
-    }
-  } catch (_) { /* silent — hardcoded list is the fallback */ }
+    if (apiSongs.length > 0) SONGS = [...new Set([...SONGS, ...apiSongs])].sort();
+  } catch (_) {}
 })();
 </script>
 </body>
