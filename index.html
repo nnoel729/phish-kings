@@ -6,6 +6,8 @@
 <title>PhishKings</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
 <style>
 :root {
   --bg:       #13151c;
@@ -20,593 +22,248 @@
   --text-3:   #5a5f6e;
   --red:      #e84c3d;
 }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Barlow',system-ui,sans-serif; min-height:100vh; display:flex; justify-content:center; }
+.wrap { width:100%; max-width:720px; }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+/* HEADER */
+.site-header { background:#0d0f14; border-bottom:3px solid var(--green); padding:.9rem 1.5rem; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+.logo { display:flex; align-items:center; gap:.5rem; }
+.logo-crown { font-size:1.5rem; color:var(--gold); }
+.logo-text { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:1.65rem; letter-spacing:.08em; text-transform:uppercase; }
+.logo-text em { color:var(--green); font-style:normal; }
+.header-nav { display:flex; gap:.4rem; }
+.nav-btn { padding:.42rem .9rem; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text-2); font-family:'Barlow',sans-serif; font-size:.78rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; cursor:pointer; transition:all .15s; }
+.nav-btn:hover { border-color:var(--green); color:var(--green); }
+.nav-btn.active { background:var(--green); border-color:var(--green); color:#000; }
+.nav-btn.danger { border-color:#5a1a1a; color:#cc5555; }
+.nav-btn.danger:hover { border-color:var(--red); color:var(--red); }
 
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Barlow', system-ui, sans-serif;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-}
+/* SCREENS */
+.screen { display:none; padding:1.5rem 1.5rem 4rem; }
+.screen.active { display:block; }
 
-.wrap {
-  width: 100%;
-  max-width: 720px;
-}
+/* TYPE */
+.page-title { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:2rem; text-transform:uppercase; letter-spacing:.04em; margin-bottom:.25rem; }
+.page-sub { color:var(--text-2); font-size:.9rem; margin-bottom:1.4rem; }
 
-/* ---- HEADER ---- */
-.site-header {
-  background: #0d0f14;
-  border-bottom: 3px solid var(--green);
-  padding: .9rem 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
+/* CARDS */
+.card { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:1.4rem; margin-bottom:1rem; }
+.card-title { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-2); margin-bottom:1rem; padding-bottom:.6rem; border-bottom:1px solid var(--border); }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-}
+/* HOME */
+.home-cards { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+@media(max-width:480px){ .home-cards { grid-template-columns:1fr; } }
+.home-card-label { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:1.2rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-2); margin-bottom:.9rem; }
 
-.logo-crown {
-  font-size: 1.5rem;
-  line-height: 1;
-  color: var(--gold);
-}
+/* INPUTS */
+label { display:block; font-size:.73rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-2); margin-bottom:.35rem; font-weight:700; }
+input[type=text] { width:100%; padding:.75rem 1rem; background:#0d0f14; border:1px solid var(--border); border-radius:4px; color:var(--text); font-size:1rem; font-family:'Barlow',sans-serif; outline:none; transition:border-color .2s; }
+input[type=text]:focus { border-color:var(--green); }
+input[type=text]::placeholder { color:var(--text-3); }
+.error-msg { color:var(--red); font-size:.82rem; margin-top:.35rem; min-height:1.1rem; }
 
-.logo-text {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 900;
-  font-size: 1.65rem;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--text);
-  line-height: 1;
-}
+/* BUTTONS */
+.btn { display:block; width:100%; padding:.88rem 1.5rem; border:none; border-radius:4px; font-size:1rem; font-family:'Barlow',sans-serif; font-weight:700; cursor:pointer; transition:all .15s; margin-top:.75rem; text-transform:uppercase; letter-spacing:.06em; }
+.btn-primary { background:var(--green); color:#000; }
+.btn-primary:hover { background:#68eb38; }
+.btn-primary:disabled { background:var(--green-dk); color:#000; cursor:default; }
+.btn-ghost { background:transparent; border:1px solid var(--border); color:var(--text-2); }
+.btn-ghost:hover { border-color:var(--green); color:var(--green); }
+.btn-sm { width:auto; display:inline-block; padding:.45rem .95rem; font-size:.78rem; margin-top:0; }
+.btn-danger { background:transparent; border:1px solid #5a1a1a; color:#cc5555; }
+.btn-danger:hover { border-color:var(--red); color:var(--red); }
 
-.logo-text em { color: var(--green); font-style: normal; }
+/* LOBBY */
+.room-code-big { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:5rem; color:var(--green); text-align:center; letter-spacing:.3em; text-indent:.3em; line-height:1; margin:.5rem 0; }
+.player-chips { display:flex; flex-wrap:wrap; gap:.5rem; margin:.5rem 0 1rem; }
+.player-chip { display:inline-flex; align-items:center; gap:.4rem; background:var(--surface2); border:1px solid var(--border); border-radius:4px; padding:.35rem .7rem; font-size:.85rem; font-weight:600; color:var(--text-2); }
+.player-chip.is-host { border-color:rgba(240,196,10,.5); color:var(--gold); }
+.player-chip.is-me { border-color:rgba(87,214,43,.5); color:var(--green); }
+.online-dot { width:7px; height:7px; border-radius:50%; background:var(--green); flex-shrink:0; }
 
-.header-nav {
-  display: flex;
-  gap: .4rem;
-}
+/* GAME */
+.progress-bar { display:flex; gap:.25rem; margin-bottom:.5rem; }
+.pstep { flex:1; height:4px; background:var(--border); border-radius:2px; transition:background .3s; }
+.pstep.done { background:var(--green-dk); }
+.pstep.current { background:var(--green); }
+.progress-label { display:flex; justify-content:space-between; font-size:.72rem; color:var(--text-3); margin-bottom:1.3rem; text-transform:uppercase; letter-spacing:.07em; font-weight:600; }
+.cat-badge { display:inline-flex; align-items:center; gap:.4rem; background:rgba(87,214,43,.1); border:1px solid rgba(87,214,43,.25); border-radius:4px; padding:.28rem .75rem; font-size:.78rem; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:.07em; margin-bottom:.85rem; }
 
-.nav-btn {
-  padding: .42rem .9rem;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--text-2);
-  font-family: 'Barlow', sans-serif;
-  font-size: .78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  cursor: pointer;
-  transition: all .15s;
-}
-.nav-btn:hover { border-color: var(--green); color: var(--green); }
-.nav-btn.active { background: var(--green); border-color: var(--green); color: #000; }
+/* WAITING STATE */
+.waiting-for { text-align:center; padding:1.5rem 0 1rem; }
+.waiting-label { font-size:.75rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-3); font-weight:700; margin-bottom:.4rem; }
+.waiting-name { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:2.6rem; color:var(--text-2); text-transform:uppercase; line-height:1; }
+.waiting-sub { color:var(--text-3); font-size:.85rem; margin-top:.5rem; }
 
-/* ---- SCREENS ---- */
-.screen { display: none; padding: 1.5rem 1.5rem 4rem; }
-.screen.active { display: block; }
+/* PICKING STATE */
+.your-turn-banner { background:rgba(87,214,43,.1); border:1px solid rgba(87,214,43,.3); border-radius:6px; padding:.75rem 1rem; text-align:center; color:var(--green); font-weight:700; font-size:1rem; margin-bottom:1rem; }
+.turn-sub { font-size:.85rem; color:var(--text-3); margin-bottom:1.2rem; }
 
-/* ---- PAGE TITLE ---- */
-.page-title {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 900;
-  font-size: 2rem;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-  margin-bottom: .25rem;
-}
+/* AUTOCOMPLETE */
+.ac-wrap { position:relative; margin-bottom:.1rem; }
+.ac-list { position:absolute; top:100%; left:0; right:0; background:#0d0f14; border:1px solid var(--green); border-top:none; border-radius:0 0 4px 4px; max-height:240px; overflow-y:auto; z-index:50; display:none; }
+.ac-list.open { display:block; }
+.ac-item { padding:.58rem 1rem; cursor:pointer; font-size:.95rem; border-bottom:1px solid var(--border); transition:background .1s; }
+.ac-item:last-child { border-bottom:none; }
+.ac-item:hover, .ac-item.hi { background:rgba(87,214,43,.1); color:var(--green); }
+.ac-item.used { color:var(--text-3); cursor:not-allowed; background:rgba(0,0,0,.2); }
+.ac-item.used:hover { background:rgba(0,0,0,.2); color:var(--text-3); }
+.ac-taken-tag { float:right; font-size:.7rem; background:var(--border); border-radius:3px; padding:.1rem .4rem; color:var(--text-3); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
 
-.page-sub {
-  color: var(--text-2);
-  font-size: .9rem;
-  margin-bottom: 1.4rem;
-}
+/* PREVIEW */
+.preview { margin-top:1.3rem; padding-top:1.1rem; border-top:1px solid var(--border); }
+.preview-title { font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-3); margin-bottom:.6rem; font-weight:700; }
+.pg-row { display:flex; justify-content:space-between; align-items:center; padding:.38rem 0; border-bottom:1px solid rgba(255,255,255,.04); font-size:.9rem; gap:.5rem; }
+.pg-row:last-child { border-bottom:none; }
+.pg-player { color:var(--text-2); font-weight:600; flex-shrink:0; }
+.pg-song { color:var(--gold); text-align:right; font-style:italic; }
 
-/* ---- CARDS ---- */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 1.4rem;
-  margin-bottom: 1rem;
-}
+/* SCORE SCREEN */
+.score-totals { background:#0d0f14; border:1px solid var(--border); border-radius:6px; padding:1rem 1.4rem; margin-bottom:1rem; }
+.score-totals-title { font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-3); font-weight:700; margin-bottom:.7rem; }
+.totals-row { display:flex; flex-wrap:wrap; gap:.5rem 1.2rem; }
+.total-chip { display:flex; align-items:baseline; gap:.35rem; }
+.total-chip-name { font-size:.85rem; font-weight:600; color:var(--text-2); }
+.total-chip-pts { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:1.3rem; color:var(--green); }
+.total-chip-label { font-size:.7rem; color:var(--text-3); }
 
-.card-title {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 700;
-  font-size: 1rem;
-  text-transform: uppercase;
-  letter-spacing: .08em;
-  color: var(--text-2);
-  margin-bottom: 1rem;
-  padding-bottom: .6rem;
-  border-bottom: 1px solid var(--border);
-}
+.score-cat-section { margin-bottom:1.25rem; }
+.score-cat-header { display:flex; align-items:center; padding:.5rem 0; margin-bottom:.5rem; border-bottom:2px solid var(--border); }
+.score-cat-name { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:1rem; text-transform:uppercase; letter-spacing:.07em; color:var(--text-2); }
+.score-guess-row { display:flex; align-items:center; gap:.75rem; padding:.5rem 0; border-bottom:1px solid rgba(255,255,255,.04); }
+.score-guess-row:last-child { border-bottom:none; }
+.score-player-name { font-weight:600; font-size:.88rem; color:var(--text-2); width:90px; flex-shrink:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.score-song { flex:1; font-style:italic; color:var(--text); font-size:.92rem; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 
-/* ---- PLAYER PICKER ---- */
-.picker {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2.5rem;
-  margin: 1.4rem 0 1.2rem;
-}
+.pts-toggle { display:flex; border:1px solid var(--border); border-radius:4px; overflow:hidden; flex-shrink:0; }
+.pts-toggle-btn { padding:.32rem .6rem; background:transparent; border:none; cursor:pointer; font-family:'Barlow',sans-serif; font-size:.78rem; font-weight:700; color:var(--text-3); transition:all .15s; border-right:1px solid var(--border); white-space:nowrap; }
+.pts-toggle-btn:last-child { border-right:none; }
+.pts-toggle-btn:hover { background:var(--surface2); color:var(--text-2); }
+.pts-toggle-btn.sel-0 { background:var(--surface2); color:var(--text-3); }
+.pts-toggle-btn.sel-1 { background:rgba(87,214,43,.2); color:var(--green); }
+.pts-toggle-btn.sel-2 { background:rgba(240,196,10,.2); color:var(--gold); }
 
-.pick-btn {
-  width: 54px; height: 54px;
-  border-radius: 4px;
-  font-size: 1.9rem;
-  background: var(--surface2);
-  border: 2px solid var(--border);
-  color: var(--text);
-  cursor: pointer;
-  transition: all .15s;
-  display: flex; align-items: center; justify-content: center;
-  font-weight: 700;
-  line-height: 1;
-}
-.pick-btn:hover { background: var(--green); border-color: var(--green); color: #000; }
+.saved-banner { background:rgba(87,214,43,.1); border:1px solid rgba(87,214,43,.3); border-radius:4px; padding:.75rem 1rem; color:var(--green); font-weight:700; font-size:.9rem; text-align:center; margin-bottom:.75rem; display:none; }
 
-.pick-num {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 900;
-  font-size: 4.5rem;
-  color: var(--green);
-  min-width: 4rem;
-  text-align: center;
-  line-height: 1;
-}
+/* LEADERBOARD */
+.lb-row { display:flex; align-items:center; padding:.8rem 0; border-bottom:1px solid var(--border); gap:1rem; }
+.lb-row:last-child { border-bottom:none; }
+.lb-rank { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:1.5rem; width:2rem; text-align:center; flex-shrink:0; }
+.lb-rank.r1 { color:var(--gold); }
+.lb-rank.r2 { color:#c0c0c0; }
+.lb-rank.r3 { color:#cd7f32; }
+.lb-rank.rn { color:var(--text-3); }
+.lb-info { flex:1; }
+.lb-name { font-weight:700; font-size:1rem; }
+.lb-detail { font-size:.78rem; color:var(--text-3); margin-top:.1rem; }
+.lb-pts { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:1.6rem; color:var(--green); }
+.lb-pts-label { font-size:.68rem; color:var(--text-3); text-align:right; }
 
-/* ---- INPUTS ---- */
-label {
-  display: block;
-  font-size: .73rem;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--text-2);
-  margin-bottom: .35rem;
-  font-weight: 700;
-}
+/* IO */
+.io-row { display:flex; gap:.6rem; flex-wrap:wrap; }
+.io-row .btn { flex:1; min-width:120px; }
 
-input[type=text] {
-  width: 100%;
-  padding: .78rem 1rem;
-  background: #0d0f14;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  color: var(--text);
-  font-size: 1rem;
-  font-family: 'Barlow', sans-serif;
-  outline: none;
-  transition: border-color .2s;
-}
-input[type=text]:focus { border-color: var(--green); }
-input[type=text]::placeholder { color: var(--text-3); }
-
-/* ---- BUTTONS ---- */
-.btn {
-  display: block;
-  width: 100%;
-  padding: .88rem 1.5rem;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-family: 'Barlow', sans-serif;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all .15s;
-  margin-top: .75rem;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-}
-
-.btn-primary { background: var(--green); color: #000; }
-.btn-primary:hover { background: #68eb38; }
-.btn-primary:active { transform: scale(.99); }
-.btn-primary:disabled { background: var(--green-dk); cursor: default; }
-
-.btn-ghost {
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text-2);
-}
-.btn-ghost:hover { border-color: var(--green); color: var(--green); }
-
-.btn-sm {
-  width: auto;
-  display: inline-block;
-  padding: .45rem .95rem;
-  font-size: .78rem;
-  margin-top: 0;
-}
-
-.btn-danger {
-  background: transparent;
-  border: 1px solid #5a1a1a;
-  color: #cc5555;
-}
-.btn-danger:hover { border-color: var(--red); color: var(--red); }
-
-/* ---- NAME ROWS ---- */
-.name-row {
-  display: flex;
-  align-items: center;
-  gap: .7rem;
-  margin-bottom: .6rem;
-}
-
-.badge {
-  width: 34px; height: 34px; flex-shrink: 0;
-  border-radius: 4px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--green);
-  font-size: .85rem;
-  font-weight: 700;
-  font-family: 'Barlow Condensed', sans-serif;
-}
-.name-row input { margin: 0; flex: 1; }
-
-/* ---- PROGRESS ---- */
-.progress-bar {
-  display: flex;
-  gap: .25rem;
-  margin-bottom: .5rem;
-}
-.pstep {
-  flex: 1;
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
-  transition: background .3s;
-}
-.pstep.done { background: var(--green-dk); }
-.pstep.current { background: var(--green); }
-
-.progress-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: .72rem;
-  color: var(--text-3);
-  margin-bottom: 1.3rem;
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  font-weight: 600;
-}
-
-/* ---- GAME SCREEN ---- */
-.cat-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: .4rem;
-  background: rgba(87,214,43,.1);
-  border: 1px solid rgba(87,214,43,.25);
-  border-radius: 4px;
-  padding: .28rem .75rem;
-  font-size: .78rem;
-  font-weight: 700;
-  color: var(--green);
-  text-transform: uppercase;
-  letter-spacing: .07em;
-  margin-bottom: .85rem;
-}
-
-.pts-badge {
-  background: rgba(240,196,10,.12);
-  border: 1px solid rgba(240,196,10,.3);
-  color: var(--gold);
-  border-radius: 3px;
-  padding: .1rem .4rem;
-  font-size: .7rem;
-  font-weight: 700;
-  margin-left: .3rem;
-}
-
-.turn-name {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 900;
-  font-size: 2.4rem;
-  text-transform: uppercase;
-  letter-spacing: .03em;
-  color: var(--gold);
-  margin-bottom: .2rem;
-  line-height: 1;
-}
-
-.turn-sub {
-  font-size: .85rem;
-  color: var(--text-3);
-  margin-bottom: 1.3rem;
-}
-
-/* ---- AUTOCOMPLETE ---- */
-.ac-wrap { position: relative; margin-bottom: .1rem; }
-
-.ac-list {
-  position: absolute;
-  top: 100%; left: 0; right: 0;
-  background: #0d0f14;
-  border: 1px solid var(--green);
-  border-top: none;
-  border-radius: 0 0 4px 4px;
-  max-height: 240px;
-  overflow-y: auto;
-  z-index: 50;
-  display: none;
-}
-.ac-list.open { display: block; }
-
-.ac-item {
-  padding: .58rem 1rem;
-  cursor: pointer;
-  font-size: .95rem;
-  transition: background .1s;
-  border-bottom: 1px solid var(--border);
-}
-.ac-item:last-child { border-bottom: none; }
-.ac-item:hover, .ac-item.hi { background: rgba(87,214,43,.1); color: var(--green); }
-
-.ac-item.used {
-  color: var(--text-3);
-  cursor: not-allowed;
-  background: rgba(0,0,0,.2);
-}
-.ac-item.used:hover { background: rgba(0,0,0,.2); color: var(--text-3); }
-
-.ac-taken-tag {
-  float: right;
-  font-size: .7rem;
-  background: var(--border);
-  border-radius: 3px;
-  padding: .1rem .4rem;
-  color: var(--text-3);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .05em;
-}
-
-/* ---- GUESS PREVIEW ---- */
-.preview {
-  margin-top: 1.3rem;
-  padding-top: 1.1rem;
-  border-top: 1px solid var(--border);
-}
-
-.preview-title {
-  font-size: .72rem;
-  text-transform: uppercase;
-  letter-spacing: .1em;
-  color: var(--text-3);
-  margin-bottom: .6rem;
-  font-weight: 700;
-}
-
-.pg-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: .38rem 0;
-  border-bottom: 1px solid rgba(255,255,255,.04);
-  font-size: .9rem;
-  gap: .5rem;
-}
-.pg-row:last-child { border-bottom: none; }
-.pg-player { color: var(--text-2); font-weight: 600; flex-shrink: 0; }
-.pg-song   { color: var(--gold); text-align: right; font-style: italic; }
-
-/* ---- RESULTS TABLE ---- */
-.results-scroll { overflow-x: auto; margin: 0 -1.4rem; padding: 0 1.4rem; }
-
-table { width: 100%; border-collapse: collapse; font-size: .83rem; white-space: nowrap; }
-thead tr { background: #0d0f14; }
-
-th {
-  padding: .6rem .8rem;
-  color: var(--green);
-  border: 1px solid var(--border);
-  text-align: left;
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: .72rem;
-  letter-spacing: .06em;
-}
-
-td {
-  padding: .52rem .8rem;
-  border: 1px solid var(--border);
-  color: var(--text);
-}
-
-tr:nth-child(even) td { background: rgba(255,255,255,.02); }
-tr:hover td { background: rgba(87,214,43,.04); }
-.td-player { color: var(--text); font-weight: 700; }
-.td-correct { color: var(--green); font-weight: 700; }
-.td-wrong   { color: var(--text-3); }
-
-/* ---- SCORE INPUTS ---- */
-.score-row {
-  display: flex;
-  align-items: center;
-  gap: .75rem;
-  margin-bottom: .6rem;
-}
-.score-cat {
-  width: 125px;
-  flex-shrink: 0;
-  font-size: .78rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--text-2);
-  letter-spacing: .05em;
-}
-.score-row input { flex: 1; margin: 0; }
-
-/* ---- LEADERBOARD ---- */
-.lb-row {
-  display: flex;
-  align-items: center;
-  padding: .8rem 0;
-  border-bottom: 1px solid var(--border);
-  gap: 1rem;
-}
-.lb-row:last-child { border-bottom: none; }
-
-.lb-rank {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 900;
-  font-size: 1.5rem;
-  width: 2rem;
-  text-align: center;
-  flex-shrink: 0;
-}
-.lb-rank.r1 { color: var(--gold); }
-.lb-rank.r2 { color: #c0c0c0; }
-.lb-rank.r3 { color: #cd7f32; }
-.lb-rank.rn { color: var(--text-3); }
-
-.lb-info { flex: 1; }
-.lb-name { font-weight: 700; font-size: 1rem; }
-.lb-detail { font-size: .78rem; color: var(--text-3); margin-top: .1rem; }
-
-.lb-pts { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 1.6rem; color: var(--green); }
-.lb-pts-label { font-size: .68rem; color: var(--text-3); text-align: right; }
-
-/* ---- CHIPS ---- */
-.score-chip {
-  display: inline-flex;
-  align-items: center;
-  background: rgba(87,214,43,.15);
-  border: 1px solid rgba(87,214,43,.3);
-  border-radius: 3px;
-  padding: .12rem .45rem;
-  font-size: .72rem;
-  font-weight: 700;
-  color: var(--green);
-  margin-left: .4rem;
-  font-family: 'Barlow', sans-serif;
-  text-transform: none;
-  letter-spacing: 0;
-}
-
-/* ---- HELPERS ---- */
-.center { text-align: center; }
-.muted  { color: var(--text-2); font-size: .9rem; }
-.spacer { height: 1rem; }
-.divider { border: none; border-top: 1px solid var(--border); margin: 1.2rem 0; }
-.tr-right { text-align: right; }
-
-.empty-state {
-  text-align: center;
-  padding: 2.5rem 1rem;
-  color: var(--text-3);
-}
-.empty-icon { font-size: 2.8rem; margin-bottom: .75rem; }
-.empty-state p { font-size: .9rem; line-height: 1.5; }
+/* HELPERS */
+.center { text-align:center; }
+.muted { color:var(--text-2); font-size:.9rem; }
+.spacer { height:1rem; }
+.divider { border:none; border-top:1px solid var(--border); margin:1.2rem 0; }
+.tr-right { text-align:right; }
+.empty-state { text-align:center; padding:2.5rem 1rem; color:var(--text-3); }
+.empty-icon { font-size:2.8rem; margin-bottom:.75rem; }
+.empty-state p { font-size:.9rem; line-height:1.5; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<!-- ═══════ HEADER ═══════ -->
 <header class="site-header">
   <div class="logo">
     <span class="logo-crown">♛</span>
     <div class="logo-text">Phish<em>Kings</em></div>
   </div>
   <div class="header-nav">
-    <button class="nav-btn active" id="nav-play" onclick="navTo('play')">Play</button>
-    <button class="nav-btn" id="nav-stats" onclick="navTo('stats')">All-Time Stats</button>
+    <button class="nav-btn danger" id="nav-leave" onclick="leaveRoom()" style="display:none">Leave</button>
+    <button class="nav-btn" id="nav-stats" onclick="navStats()">All-Time Stats</button>
   </div>
 </header>
 
-<!-- ═══════════════════════════════════════════
-     ALL-TIME STATS
-     ═══════════════════════════════════════════ -->
-<div id="s-alltime" class="screen">
-  <div class="page-title">All-Time Leaderboard</div>
-  <p class="page-sub">Points accumulated across all scored sessions</p>
-
-  <div class="card">
-    <div class="card-title">Top Players</div>
-    <div id="lb-list"></div>
-  </div>
-
-  <div class="tr-right">
-    <button class="btn btn-danger btn-sm" onclick="clearStats()">Reset All-Time Stats</button>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════
-     SCREEN 1 — WELCOME
-     ═══════════════════════════════════════════ -->
-<div id="s-welcome" class="screen active">
+<!-- HOME -->
+<div id="s-home" class="screen active">
   <div class="page-title">Draft Your Picks</div>
-  <p class="page-sub">Guess the setlist before they play</p>
-
-  <div class="card">
-    <div class="card-title">How Many Players?</div>
-    <div class="picker">
-      <button class="pick-btn" id="btn-minus">−</button>
-      <div class="pick-num" id="pick-num">3</div>
-      <button class="pick-btn" id="btn-plus">+</button>
+  <p class="page-sub">Everyone plays from their own phone</p>
+  <div class="home-cards">
+    <div class="card">
+      <div class="home-card-label">♛ Host a Game</div>
+      <label for="host-name">Your Name</label>
+      <input type="text" id="host-name" placeholder="Enter your name" maxlength="20" autocomplete="off">
+      <div class="error-msg" id="host-err"></div>
+      <button class="btn btn-primary" id="btn-create" onclick="createRoom()">Create Room →</button>
     </div>
-    <p class="center muted" style="margin-bottom:1.2rem">2 – 10 players</p>
-    <button class="btn btn-primary" id="btn-to-names">Continue →</button>
+    <div class="card">
+      <div class="home-card-label">⚡ Join a Game</div>
+      <label for="join-code">Room Code</label>
+      <input type="text" id="join-code" placeholder="4-digit code" maxlength="4" inputmode="numeric" autocomplete="off">
+      <div style="height:.5rem"></div>
+      <label for="join-name">Your Name</label>
+      <input type="text" id="join-name" placeholder="Enter your name" maxlength="20" autocomplete="off">
+      <div class="error-msg" id="join-err"></div>
+      <button class="btn btn-ghost" id="btn-join" onclick="joinRoom()">Join Room →</button>
+    </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     SCREEN 2 — PLAYER NAMES
-     ═══════════════════════════════════════════ -->
-<div id="s-names" class="screen">
-  <div class="page-title">Enter Lineups</div>
-  <p class="page-sub">Who's playing tonight?</p>
-
+<!-- LOBBY -->
+<div id="s-lobby" class="screen">
+  <div class="page-title">Lobby</div>
+  <p class="page-sub">Share the code — everyone opens this page and enters it</p>
+  <div class="card" style="text-align:center">
+    <div class="card-title">Room Code</div>
+    <div class="room-code-big" id="lobby-code">—</div>
+    <button class="btn btn-ghost btn-sm" onclick="copyCode()" id="btn-copy" style="margin:.5rem auto 0;display:inline-block">Copy Code</button>
+  </div>
   <div class="card">
-    <div class="card-title">Player Names</div>
-    <div id="names-inputs"></div>
-    <div class="spacer"></div>
-    <button class="btn btn-primary" id="btn-start">Lock In Lineups →</button>
+    <div class="card-title">Players &nbsp;<span id="lobby-count" style="color:var(--text-3);font-family:'Barlow',sans-serif;font-size:.82rem;text-transform:none;letter-spacing:0;font-weight:400;"></span></div>
+    <div class="player-chips" id="lobby-players"></div>
+    <div id="lobby-host-section">
+      <p class="muted" style="font-size:.82rem;margin-bottom:.75rem">Start when everyone has joined.</p>
+      <button class="btn btn-primary" id="btn-start-game" onclick="startGame()">Start Game →</button>
+    </div>
+    <div id="lobby-wait-msg" class="center muted" style="padding:1rem 0;display:none">
+      Waiting for the host to start…
+    </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     SCREEN 3 — GAME
-     ═══════════════════════════════════════════ -->
+<!-- GAME -->
 <div id="s-game" class="screen">
   <div class="card">
     <div class="progress-bar" id="progress-bar"></div>
     <div class="progress-label">
-      <span id="prog-cat-label">Round 1</span>
-      <span id="prog-step-label">Pick 1 of 3</span>
+      <span id="prog-cat-label"></span>
+      <span id="prog-step-label"></span>
     </div>
-
     <div><span class="cat-badge" id="cat-badge"></span></div>
-    <div class="turn-name" id="turn-name"></div>
-    <div class="turn-sub" id="turn-sub"></div>
 
-    <div class="ac-wrap">
-      <label>Song Pick</label>
-      <input type="text" id="song-input" placeholder="Start typing a song name…" autocomplete="off">
-      <div class="ac-list" id="ac-list"></div>
+    <div id="waiting-ui" style="display:none">
+      <div class="waiting-for">
+        <div class="waiting-label">Waiting for</div>
+        <div class="waiting-name" id="waiting-name">—</div>
+        <div class="waiting-sub">to make their pick…</div>
+      </div>
     </div>
 
-    <button class="btn btn-primary" id="btn-submit">Submit Pick ✓</button>
+    <div id="picking-ui" style="display:none">
+      <div class="your-turn-banner">🎵 It's your turn to pick!</div>
+      <div class="turn-sub" id="turn-sub"></div>
+      <div class="ac-wrap">
+        <label>Your Pick</label>
+        <input type="text" id="song-input" placeholder="Start typing a song name…" autocomplete="off">
+        <div class="ac-list" id="ac-list"></div>
+      </div>
+      <button class="btn btn-primary" id="btn-submit">Submit Pick ✓</button>
+    </div>
 
     <div class="preview" id="preview" style="display:none">
       <div class="preview-title">Picks so far this round</div>
@@ -615,571 +272,650 @@ tr:hover td { background: rgba(87,214,43,.04); }
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     SCREEN 4 — SCORE THE SHOW
-     ═══════════════════════════════════════════ -->
+<!-- SCORE -->
 <div id="s-score" class="screen">
   <div class="page-title">Score the Show</div>
-  <p class="page-sub">Enter what Phish actually played to calculate points</p>
-
+  <p class="page-sub">0 = no score &nbsp;·&nbsp; 1pt = played wrong spot &nbsp;·&nbsp; 2pts = exact hit</p>
+  <div class="score-totals">
+    <div class="score-totals-title">Running Totals</div>
+    <div class="totals-row" id="totals-row"></div>
+  </div>
   <div class="card">
-    <div class="card-title">All Picks</div>
-    <div class="results-scroll">
-      <table id="results-table"></table>
-    </div>
+    <div id="score-categories"></div>
   </div>
-
+  <div class="saved-banner" id="saved-banner">Saved to all-time stats ✓</div>
   <div class="card">
-    <div class="card-title">Actual Setlist · Enter to Score</div>
-    <p class="muted" style="margin-bottom:1rem;font-size:.85rem">
-      Type what Phish actually played. Exact match = points.
-      Bustout = <strong style="color:var(--gold)">3×</strong> · Wildcard = <strong style="color:var(--gold)">2×</strong>
-    </p>
-    <div id="score-inputs"></div>
-    <button class="btn btn-primary" id="btn-calc">Calculate Scores →</button>
+    <div class="card-title">Wrap Up</div>
+    <button class="btn btn-primary" id="btn-save-session" onclick="saveSession()">Save to All-Time Stats ★</button>
+    <button class="btn btn-ghost" onclick="exportStats()" style="margin-top:.5rem">⬇ Export phishkings-stats.json</button>
+    <button class="btn btn-ghost" onclick="leaveRoom()" style="margin-top:.5rem">Play Again</button>
   </div>
-
-  <div class="card" id="final-scores-card" style="display:none">
-    <div class="card-title">Final Scores</div>
-    <div id="final-scores-list"></div>
-    <div class="divider"></div>
-    <button class="btn btn-primary" id="btn-save-stats">Save to All-Time Stats ★</button>
-    <button class="btn btn-ghost" id="btn-again" style="margin-top:.5rem">Play Again</button>
-  </div>
-
-  <button class="btn btn-ghost" id="btn-skip-score" style="margin-top:.5rem">Skip Scoring / Play Again</button>
 </div>
 
-</div><!-- /wrap -->
+<!-- ALL-TIME STATS -->
+<div id="s-alltime" class="screen">
+  <div class="page-title">All-Time Leaderboard</div>
+  <p class="page-sub">Points across all scored sessions</p>
+  <div class="card">
+    <div class="card-title">Top Players</div>
+    <div id="lb-list"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Stats File · phishkings-stats.json</div>
+    <p class="muted" style="margin-bottom:1rem;font-size:.85rem">Import from the repo or export after scoring to commit back.</p>
+    <div class="io-row">
+      <button class="btn btn-ghost" onclick="$f('file-import').click()">⬆ Import JSON</button>
+      <button class="btn btn-primary" onclick="exportStats()">⬇ Export JSON</button>
+    </div>
+    <input type="file" id="file-import" accept=".json" onchange="importStats(event)" style="display:none">
+  </div>
+  <div class="tr-right" style="margin-top:.5rem">
+    <button class="btn btn-danger btn-sm" onclick="clearStats()">Reset All Stats</button>
+  </div>
+  <div style="margin-top:1rem">
+    <button class="btn btn-ghost" onclick="navHome()">← Back</button>
+  </div>
+</div>
 
+</div>
 <script>
-// ════════════════════════════════════════════════════════════════
-// SONG LIST
-// ════════════════════════════════════════════════════════════════
+// ── SONGS ──────────────────────────────────────────────────────
 let SONGS = [
-  "2001 (Also Sprach Zarathustra)", "46 Days", "A Song I Heard the Ocean Sing",
-  "AC/DC Bag", "Access Me", "Alaska", "Alumni Blues", "Antelope",
-  "Anything But Me", "Army of One", "Axilla", "Axilla (Part II)",
-  "Backwards Down the Number Line", "Bathtub Gin", "Beauty of a Broken Heart",
-  "Beauty of My Dreams", "Big Black Furry Creature from Mars", "Birds of a Feather",
-  "Blaze On", "Bold As Love", "Bouncing Around the Room", "Brain",
-  "Breath and Burning", "Brother", "Buffalo Bill", "Bug", "Buried Alive",
-  "Camel Walk", "Carini", "Cars Trucks Buses", "Cavern", "Chalk Dust Torture",
-  "Character Zero", "Cities", "Colonel Forbin's Ascent", "Corinna",
-  "Crowd Control", "Daniel Saw the Stone", "David Bowie", "Dear Mrs. Reagan",
-  "Demand", "Destiny Unbound", "Devotion to a Dream", "Dirt", "Divided Sky",
-  "Dog Faced Boy", "Dog Log", "Donna Lee", "Down with Disease", "Driver",
-  "Drowned", "Eliza", "Esther", "Everything's Right", "Fast Enough for You",
-  "Fee", "Fire", "First Tube", "Fixin' to Die", "Fluffhead", "Foam",
-  "Frankie Says", "Free", "Fuego", "Ghost", "Glide", "Golden Age",
-  "Golgi Apparatus", "Gotta Jibboo", "Guelah Papyrus", "Gumbo", "Guyute",
-  "Ha Ha Ha", "Halfway to the Moon", "Halley's Comet", "Harpua", "Harry Hood",
-  "Heavy Things", "I Am Hydrogen", "I Didn't Know", "Icculus", "If I Could",
-  "In a Hole", "The Inlaw Josie Wales", "It's Ice", "Joy", "Julius",
-  "Kill Devil Falls", "Kung", "La Grange", "Lawn Boy", "Leaves", "Lengthwise",
-  "Lifeboy", "Light", "Limb by Limb", "Llama", "Loving Cup",
-  "Makisupa Policeman", "Mango Song", "Maze", "McGrupp and the Watchful Hosemasters",
-  "Meatstick", "Mercury", "Mike's Song", "Miss You", "The Moma Dance",
-  "Mound", "Mr. Completely", "My Friend My Friend", "My Sweet One", "N2O",
-  "Nellie Kane", "No Men in No Man's Land", "Ocelot", "Oh Kee Pa Ceremony",
-  "Pebbles and Marbles", "Peaches en Regalia", "Petrichor", "Piper", "Poor Heart",
-  "Possum", "Prince Caspian", "Punch You in the Eye", "Quinn the Eskimo", "Reba",
-  "Rift", "Roggae", "Roses Are Free", "Ruby Waves", "Run Like an Antelope",
-  "Runaway Jim", "Sample in a Jar", "Sand", "Sanity", "Scent of a Mule",
-  "Shade", "Sigma Oasis", "Simple", "Slave to the Traffic Light",
-  "Sneakin' Sally Through the Alley", "Soul Planet", "Sparkle",
-  "Split Open and Melt", "The Squirming Coil", "Stash",
-  "Stealing Time from the Faulty Plan", "Strange Design", "Suzy Greenberg",
-  "Sweet Jane", "Swept Away", "Taste", "The Curtain With",
-  "Timber (Jerry)", "Toast", "Tube", "Tweezer", "Tweezer Reprise", "Twist",
-  "Undermind", "Vultures", "Wading in the Velvet Sea", "Waste",
-  "Water in the Sky", "Weekapaug Groove", "What's the Use?",
-  "When the Circus Comes", "Where the Night Goes", "Whipping Post", "Wilson",
-  "Winterqueen", "Wolfman's Brother", "Wombat", "Ya Mar", "Yarmouth Road",
-  "You Enjoy Myself", "Back on the Train", "Farmhouse", "Sleep",
-  "Mexican Cousin", "Mozambique", "Spreading Santorum", "Spread It Round",
-  "Emotional Rescue", "Leader of the Landslide", "Let Me Lie",
-  "Midnight Rider", "More", "Montana", "Meat", "Back at the Chicken Shack",
-  "Boogie On Reggae Woman", "Crosseyed and Painless", "Gold Soundz",
-  "Happy Hippie", "Haunted House", "Long Cool Woman", "Midnight Moonlight",
-  "My Generation", "Terrapin", "Time Loves a Hero",
-  "When Something Is Wrong with My Baby",
-].reduce((a, s) => { if (!a.includes(s)) a.push(s); return a; }, []).sort();
+  "2001 (Also Sprach Zarathustra)","46 Days","A Song I Heard the Ocean Sing",
+  "AC/DC Bag","Access Me","Alaska","Alumni Blues","Antelope","Anything But Me",
+  "Army of One","Axilla","Axilla (Part II)","Backwards Down the Number Line",
+  "Bathtub Gin","Beauty of a Broken Heart","Beauty of My Dreams",
+  "Big Black Furry Creature from Mars","Birds of a Feather","Blaze On",
+  "Bold As Love","Bouncing Around the Room","Brain","Breath and Burning",
+  "Brother","Buffalo Bill","Bug","Buried Alive","Camel Walk","Carini",
+  "Cars Trucks Buses","Cavern","Chalk Dust Torture","Character Zero","Cities",
+  "Colonel Forbin's Ascent","Corinna","Crowd Control","Daniel Saw the Stone",
+  "David Bowie","Dear Mrs. Reagan","Demand","Destiny Unbound",
+  "Devotion to a Dream","Dirt","Divided Sky","Dog Faced Boy","Dog Log",
+  "Donna Lee","Down with Disease","Driver","Drowned","Eliza","Esther",
+  "Everything's Right","Fast Enough for You","Fee","Fire","First Tube",
+  "Fixin' to Die","Fluffhead","Foam","Frankie Says","Free","Fuego","Ghost",
+  "Glide","Golden Age","Golgi Apparatus","Gotta Jibboo","Guelah Papyrus",
+  "Gumbo","Guyute","Ha Ha Ha","Halfway to the Moon","Halley's Comet","Harpua",
+  "Harry Hood","Heavy Things","I Am Hydrogen","I Didn't Know","Icculus",
+  "If I Could","In a Hole","The Inlaw Josie Wales","It's Ice","Joy","Julius",
+  "Kill Devil Falls","Kung","La Grange","Lawn Boy","Leaves","Lengthwise",
+  "Lifeboy","Light","Limb by Limb","Llama","Loving Cup","Makisupa Policeman",
+  "Mango Song","Maze","McGrupp and the Watchful Hosemasters","Meatstick",
+  "Mercury","Mike's Song","Miss You","The Moma Dance","Mound","Mr. Completely",
+  "My Friend My Friend","My Sweet One","N2O","Nellie Kane",
+  "No Men in No Man's Land","Ocelot","Oh Kee Pa Ceremony",
+  "Pebbles and Marbles","Peaches en Regalia","Petrichor","Piper","Poor Heart",
+  "Possum","Prince Caspian","Punch You in the Eye","Quinn the Eskimo","Reba",
+  "Rift","Roggae","Roses Are Free","Ruby Waves","Run Like an Antelope",
+  "Runaway Jim","Sample in a Jar","Sand","Sanity","Scent of a Mule","Shade",
+  "Sigma Oasis","Simple","Slave to the Traffic Light",
+  "Sneakin' Sally Through the Alley","Soul Planet","Sparkle",
+  "Split Open and Melt","The Squirming Coil","Stash",
+  "Stealing Time from the Faulty Plan","Strange Design","Suzy Greenberg",
+  "Sweet Jane","Swept Away","Taste","The Curtain With","Timber (Jerry)",
+  "Toast","Tube","Tweezer","Tweezer Reprise","Twist","Undermind","Vultures",
+  "Wading in the Velvet Sea","Waste","Water in the Sky","Weekapaug Groove",
+  "What's the Use?","When the Circus Comes","Where the Night Goes",
+  "Whipping Post","Wilson","Winterqueen","Wolfman's Brother","Wombat",
+  "Ya Mar","Yarmouth Road","You Enjoy Myself","Back on the Train","Farmhouse",
+  "Sleep","Mexican Cousin","Mozambique","Spreading Santorum","Spread It Round",
+  "Emotional Rescue","Leader of the Landslide","Let Me Lie","Midnight Rider",
+  "More","Montana","Meat","Back at the Chicken Shack","Boogie On Reggae Woman",
+  "Crosseyed and Painless","Gold Soundz","Happy Hippie","Haunted House",
+  "Long Cool Woman","Midnight Moonlight","My Generation","Terrapin",
+  "Time Loves a Hero","When Something Is Wrong with My Baby",
+].reduce((a,s)=>{ if(!a.includes(s)) a.push(s); return a; },[]).sort();
 
-// ════════════════════════════════════════════════════════════════
-// CATEGORIES
-// ════════════════════════════════════════════════════════════════
+// ── CATEGORIES ─────────────────────────────────────────────────
 const CATS = [
-  { emoji: "🎵", label: "Show Opener",      short: "Opener",    pts: 1 },
-  { emoji: "🎸", label: "Set 1 Closer",     short: "S1 Closer", pts: 1 },
-  { emoji: "🎶", label: "Set 2 Opener",     short: "S2 Opener", pts: 1 },
-  { emoji: "🎤", label: "Set 2 Closer",     short: "S2 Closer", pts: 1 },
-  { emoji: "✨", label: "Encore Song",      short: "Encore",    pts: 1 },
-  { emoji: "💎", label: "Bustout",          short: "Bustout",   pts: 3 },
-  { emoji: "🃏", label: "Wildcard Song",    short: "Wildcard",  pts: 2 },
+  { emoji:"🎵", label:"Show Opener",   short:"Opener"    },
+  { emoji:"🎸", label:"Set 1 Closer",  short:"S1 Closer" },
+  { emoji:"🎶", label:"Set 2 Opener",  short:"S2 Opener" },
+  { emoji:"🎤", label:"Set 2 Closer",  short:"S2 Closer" },
+  { emoji:"✨", label:"Encore Song",   short:"Encore"    },
+  { emoji:"💎", label:"Bustout",       short:"Bustout"   },
+  { emoji:"🃏", label:"Wildcard Song", short:"Wildcard"  },
 ];
 
-// ════════════════════════════════════════════════════════════════
-// STATE
-// ════════════════════════════════════════════════════════════════
-let G = {};
+// ── FIREBASE ────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:            "AIzaSyCqYtLz30MpzzlqluJ3252MljKvJBBmdDE",
+  authDomain:        "phishkings-7460e.firebaseapp.com",
+  databaseURL:       "https://phishkings-7460e-default-rtdb.firebaseio.com",
+  projectId:         "phishkings-7460e",
+  storageBucket:     "phishkings-7460e.firebasestorage.app",
+  messagingSenderId: "504619702836",
+  appId:             "1:504619702836:web:481ab38f114a050fba8861",
+});
+const db = firebase.database();
 
-function newGame() {
-  G = {
-    playerCount  : G.playerCount || 3,
-    players      : [],
-    guesses      : Array.from({ length: CATS.length }, () => ({})),
-    catIdx       : 0,
-    order        : [],
-    turnIdx      : 0,
-    lastPlayer   : null,
-    usedSongs    : new Set(),
-    sessionScores: null,
-    statsSaved   : false,
-  };
-}
-newGame();
-
-// ════════════════════════════════════════════════════════════════
-// ALL-TIME STATS
-// ════════════════════════════════════════════════════════════════
-const STATS_KEY = 'phishkings_alltime_v1';
-
-function loadStats() {
-  try { return JSON.parse(localStorage.getItem(STATS_KEY)) || {}; }
-  catch (_) { return {}; }
+// ── SESSION ─────────────────────────────────────────────────────
+let myId = sessionStorage.getItem('pk_id');
+if (!myId) {
+  myId = Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+  sessionStorage.setItem('pk_id', myId);
 }
 
-function saveStats(stats) {
-  localStorage.setItem(STATS_KEY, JSON.stringify(stats));
-}
+// ── STATE ───────────────────────────────────────────────────────
+let currentCode   = null;
+let amHost        = false;
+let myName        = '';
+let roomRef       = null;
+let scoresRef     = null;
+let prevStatus    = null;
+let scoreUIBuilt  = false;
+let usedSongs     = new Set();   // rebuilt from Firebase on each renderGame()
 
-function addSessionToStats(scores) {
-  const stats = loadStats();
-  scores.forEach(({ name, pts, correct, total }) => {
-    if (!stats[name]) stats[name] = { pts: 0, correct: 0, total: 0, sessions: 0 };
-    stats[name].pts     += pts;
-    stats[name].correct += correct;
-    stats[name].total   += total;
-    stats[name].sessions++;
-  });
-  saveStats(stats);
-}
-
-function clearStats() {
-  if (!confirm('Reset ALL all-time stats? This cannot be undone.')) return;
-  localStorage.removeItem(STATS_KEY);
-  renderLeaderboard();
-}
-
-function renderLeaderboard() {
-  const stats = loadStats();
-  const lb = $('lb-list');
-  const entries = Object.entries(stats)
-    .map(([name, d]) => ({ name, ...d }))
-    .sort((a, b) => b.pts - a.pts);
-
-  if (!entries.length) {
-    lb.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">♛</div>
-        <p>No stats yet.<br>Play a game and save your scores to start tracking!</p>
-      </div>`;
-    return;
-  }
-
-  lb.innerHTML = entries.map((e, i) => {
-    const cls = ['r1','r2','r3'][i] || 'rn';
-    const pct = e.total ? Math.round(e.correct / e.total * 100) : 0;
-    return `
-      <div class="lb-row">
-        <div class="lb-rank ${cls}">${i + 1}</div>
-        <div class="lb-info">
-          <div class="lb-name">${escHtml(e.name)}</div>
-          <div class="lb-detail">${e.sessions} session${e.sessions !== 1 ? 's' : ''} &middot; ${e.correct}/${e.total} correct (${pct}%)</div>
-        </div>
-        <div>
-          <div class="lb-pts">${e.pts}</div>
-          <div class="lb-pts-label">PTS</div>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-// ════════════════════════════════════════════════════════════════
-// NAVIGATION
-// ════════════════════════════════════════════════════════════════
-function navTo(tab) {
-  $('nav-play').classList.toggle('active', tab === 'play');
-  $('nav-stats').classList.toggle('active', tab === 'stats');
-  if (tab === 'stats') {
-    renderLeaderboard();
-    showScreen('s-alltime');
-  } else {
-    showScreen('s-welcome');
-  }
-}
-
-// ════════════════════════════════════════════════════════════════
-// HELPERS
-// ════════════════════════════════════════════════════════════════
-function $(id) { return document.getElementById(id); }
-
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  $(id).classList.add('active');
-  window.scrollTo(0, 0);
-}
-
+// ── HELPERS ─────────────────────────────────────────────────────
+function $f(id)  { return document.getElementById(id); }
+function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function norm(s) { return s.trim().toLowerCase().replace(/[^a-z0-9]/g,''); }
 function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
   return a;
 }
-
-function escHtml(s) {
-  return String(s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $f(id).classList.add('active');
+  window.scrollTo(0,0);
 }
 
-function normalize(s) {
-  return s.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+// ── NAV ─────────────────────────────────────────────────────────
+function navStats() {
+  renderLeaderboard();
+  showScreen('s-alltime');
+}
+function navHome() {
+  if (currentCode) return; // in a game, don't navigate away
+  showScreen('s-home');
 }
 
-// ════════════════════════════════════════════════════════════════
-// SCREEN 1 — WELCOME
-// ════════════════════════════════════════════════════════════════
-$('btn-minus').addEventListener('click', () => {
-  if (G.playerCount > 2) { G.playerCount--; $('pick-num').textContent = G.playerCount; }
-});
-$('btn-plus').addEventListener('click', () => {
-  if (G.playerCount < 10) { G.playerCount++; $('pick-num').textContent = G.playerCount; }
-});
-$('btn-to-names').addEventListener('click', () => {
-  buildNamesScreen();
-  showScreen('s-names');
-});
-
-// ════════════════════════════════════════════════════════════════
-// SCREEN 2 — NAMES
-// ════════════════════════════════════════════════════════════════
-function buildNamesScreen() {
-  const c = $('names-inputs');
-  c.innerHTML = '';
-  for (let i = 0; i < G.playerCount; i++) {
-    const row = document.createElement('div');
-    row.className = 'name-row';
-    row.innerHTML = `
-      <div class="badge">${i + 1}</div>
-      <input type="text" id="pname-${i}" placeholder="Player ${i + 1}">
-    `;
-    c.appendChild(row);
+// ── LEAVE ROOM ──────────────────────────────────────────────────
+function leaveRoom() {
+  if (roomRef) {
+    roomRef.off('value');
+    // Remove self from players list
+    db.ref(`rooms/${currentCode}/players/${myId}`).remove();
+    // Host deletes the whole room on leave so Firebase stays clean
+    if (amHost) db.ref(`rooms/${currentCode}`).remove();
+    roomRef = null;
   }
+  if (scoresRef) { scoresRef.off('value'); scoresRef = null; }
+  currentCode  = null;
+  amHost       = false;
+  prevStatus   = null;
+  scoreUIBuilt = false;
+  usedSongs    = new Set();
+  $f('nav-leave').style.display = 'none';
+  showScreen('s-home');
 }
 
-$('btn-start').addEventListener('click', () => {
-  const names = [];
-  for (let i = 0; i < G.playerCount; i++) {
-    const v = $(`pname-${i}`).value.trim();
-    if (!v) { $(`pname-${i}`).focus(); alert(`Enter a name for Player ${i + 1}`); return; }
-    names.push(v);
-  }
-  G.players    = names;
-  G.guesses    = Array.from({ length: CATS.length }, () => ({}));
-  G.catIdx     = 0;
-  G.lastPlayer = null;
-  G.usedSongs  = new Set();
-  G.statsSaved = false;
-  beginRound();
-  showScreen('s-game');
-});
+// ── CREATE ROOM ─────────────────────────────────────────────────
+async function createRoom() {
+  const name = $f('host-name').value.trim();
+  if (!name) { $f('host-err').textContent = 'Enter your name.'; return; }
+  $f('host-err').textContent = '';
+  $f('btn-create').disabled = true;
+  myName = name;
 
-// ════════════════════════════════════════════════════════════════
-// GAME LOGIC
-// ════════════════════════════════════════════════════════════════
-function beginRound() {
-  const all = Array.from({ length: G.players.length }, (_, i) => i);
-  if (G.lastPlayer !== null) {
-    const rest = shuffle(all.filter(i => i !== G.lastPlayer));
-    G.order = [G.lastPlayer, ...rest];
-  } else {
-    G.order = shuffle(all);
+  let code;
+  for (let i=0; i<10; i++) {
+    code = (Math.floor(Math.random()*9000)+1000).toString();
+    const snap = await db.ref(`rooms/${code}`).once('value');
+    if (!snap.exists()) break;
   }
-  G.turnIdx = 0;
-  renderGame();
+
+  await db.ref(`rooms/${code}`).set({
+    hostId:     myId,
+    status:     'lobby',
+    catIdx:     0,
+    roundOrder: null,
+    turnIdx:    0,
+    players:    { [myId]: { name: myName, joinedAt: Date.now() } },
+    guesses:    {},
+    usedSongs:  {},
+    scores:     {},
+  });
+
+  currentCode = code;
+  amHost      = true;
+  $f('btn-create').disabled = false;
+  startListening(code);
+  $f('nav-leave').style.display = 'inline-block';
+  showScreen('s-lobby');
 }
 
-function renderGame() {
-  const cat  = CATS[G.catIdx];
-  const pIdx = G.order[G.turnIdx];
-  const name = G.players[pIdx];
+// ── JOIN ROOM ────────────────────────────────────────────────────
+async function joinRoom() {
+  const code = $f('join-code').value.trim();
+  const name = $f('join-name').value.trim();
+  if (!code || code.length !== 4) { $f('join-err').textContent = 'Enter a 4-digit code.'; return; }
+  if (!name)  { $f('join-err').textContent = 'Enter your name.'; return; }
+  $f('join-err').textContent = '';
+  $f('btn-join').disabled = true;
+  myName = name;
 
-  $('progress-bar').innerHTML = CATS.map((_, i) => {
-    let cls = 'pstep';
-    if (i < G.catIdx) cls += ' done';
-    else if (i === G.catIdx) cls += ' current';
-    return `<div class="${cls}"></div>`;
-  }).join('');
+  const snap = await db.ref(`rooms/${code}`).once('value');
+  if (!snap.exists()) { $f('join-err').textContent = 'Room not found.'; $f('btn-join').disabled=false; return; }
+  const room = snap.val();
+  if (room.status !== 'lobby') { $f('join-err').textContent = 'Game already started.'; $f('btn-join').disabled=false; return; }
 
-  $('prog-cat-label').textContent  = `${cat.emoji} ${cat.label}`;
-  $('prog-step-label').textContent = `Pick ${G.turnIdx + 1} of ${G.players.length}`;
+  await db.ref(`rooms/${code}/players/${myId}`).set({ name: myName, joinedAt: Date.now() });
 
-  const ptsLabel = cat.pts === 1 ? '1 pt' : `${cat.pts} pts`;
-  $('cat-badge').innerHTML = `${cat.emoji} ${cat.label} <span class="pts-badge">${ptsLabel}</span>`;
-  $('turn-name').textContent = name.toUpperCase();
-  $('turn-sub').textContent  = `Round ${G.catIdx + 1} of ${CATS.length}`;
-
-  $('song-input').value = '';
-  hideAC();
-
-  const preview = $('preview');
-  if (G.turnIdx > 0) {
-    preview.style.display = 'block';
-    $('preview-rows').innerHTML = G.order.slice(0, G.turnIdx).map(pi => `
-      <div class="pg-row">
-        <span class="pg-player">${escHtml(G.players[pi])}</span>
-        <span class="pg-song">${escHtml(G.guesses[G.catIdx][pi] || '—')}</span>
-      </div>
-    `).join('');
-  } else {
-    preview.style.display = 'none';
-  }
-
-  setTimeout(() => $('song-input').focus(), 50);
+  currentCode = code;
+  amHost      = false;
+  $f('btn-join').disabled = false;
+  startListening(code);
+  $f('nav-leave').style.display = 'inline-block';
+  showScreen('s-lobby');
 }
 
-function submitGuess() {
-  const song = $('song-input').value.trim();
-  if (!song) { $('song-input').focus(); return; }
-
-  if (G.usedSongs.has(normalize(song))) {
-    alert(`"${song}" has already been guessed this session. Choose a different song!`);
-    $('song-input').select();
-    return;
-  }
-
-  const pIdx = G.order[G.turnIdx];
-  G.guesses[G.catIdx][pIdx] = song;
-  G.usedSongs.add(normalize(song));
-  G.lastPlayer = pIdx;
-  G.turnIdx++;
-
-  if (G.turnIdx >= G.players.length) {
-    G.catIdx++;
-    if (G.catIdx >= CATS.length) {
-      showScoreScreen();
-    } else {
-      beginRound();
-    }
-  } else {
-    renderGame();
-  }
+// ── LISTEN ───────────────────────────────────────────────────────
+function startListening(code) {
+  roomRef = db.ref(`rooms/${code}`);
+  roomRef.on('value', snap => {
+    if (!snap.exists()) { leaveRoom(); return; }
+    handleRoom(snap.val());
+  });
 }
 
-$('btn-submit').addEventListener('click', submitGuess);
+function handleRoom(room) {
+  const s = room.status;
+  if (s === 'lobby') {
+    renderLobby(room);
+    if (prevStatus !== 'lobby') showScreen('s-lobby');
+  } else if (s === 'playing') {
+    if (prevStatus !== 'playing') showScreen('s-game');
+    renderGame(room);
+  } else if (s === 'scoring') {
+    if (prevStatus !== 'scoring') { scoreUIBuilt=false; showScreen('s-score'); }
+    renderScoreScreen(room);
+  }
+  prevStatus = s;
+}
 
-// ════════════════════════════════════════════════════════════════
-// AUTOCOMPLETE  — greys out already-guessed songs
-// ════════════════════════════════════════════════════════════════
-const songInput = $('song-input');
-const acList    = $('ac-list');
-let   acActive  = -1;
+// ── LOBBY ────────────────────────────────────────────────────────
+function renderLobby(room) {
+  $f('lobby-code').textContent = currentCode;
+  const players = room.players || {};
+  const sorted  = Object.entries(players).sort((a,b)=>a[1].joinedAt-b[1].joinedAt);
+  const count   = sorted.length;
 
-songInput.addEventListener('input', () => {
-  const q = songInput.value.trim().toLowerCase();
-  if (!q) { hideAC(); return; }
-
-  const hits = SONGS.filter(s => s.toLowerCase().includes(q)).slice(0, 15);
-  if (!hits.length) { hideAC(); return; }
-
-  acList.innerHTML = hits.map(s => {
-    const used = G.usedSongs.has(normalize(s));
-    return `<div class="ac-item${used ? ' used' : ''}" data-s="${escHtml(s)}" data-used="${used}">
-      ${escHtml(s)}${used ? '<span class="ac-taken-tag">Taken</span>' : ''}
+  $f('lobby-count').textContent = `${count} player${count!==1?'s':''} joined`;
+  $f('lobby-players').innerHTML = sorted.map(([pid,p]) => {
+    let cls = 'player-chip';
+    if (pid===room.hostId) cls+=' is-host';
+    else if (pid===myId)   cls+=' is-me';
+    return `<div class="${cls}">
+      <div class="online-dot"></div>
+      ${escH(p.name)}${pid===room.hostId?' ♛':''}${pid===myId?' (you)':''}
     </div>`;
   }).join('');
 
-  acList.querySelectorAll('.ac-item:not(.used)').forEach(el => {
-    el.addEventListener('mousedown', e => { e.preventDefault(); pick(el.dataset.s); });
-    el.addEventListener('mouseenter', () => {
-      const avail = [...acList.querySelectorAll('.ac-item:not(.used)')];
-      setAcActive(avail.indexOf(el));
+  if (amHost) {
+    $f('lobby-host-section').style.display = 'block';
+    $f('lobby-wait-msg').style.display     = 'none';
+    $f('btn-start-game').disabled          = count < 2;
+    $f('btn-start-game').textContent       = count < 2 ? 'Waiting for players…' : 'Start Game →';
+  } else {
+    $f('lobby-host-section').style.display = 'none';
+    $f('lobby-wait-msg').style.display     = 'block';
+  }
+}
+
+async function startGame() {
+  const snap = await db.ref(`rooms/${currentCode}/players`).once('value');
+  const players = snap.val() || {};
+  const ids     = Object.keys(players).sort((a,b)=>players[a].joinedAt-players[b].joinedAt);
+  if (ids.length < 2) { alert('Need at least 2 players!'); return; }
+
+  await db.ref(`rooms/${currentCode}`).update({
+    status:     'playing',
+    catIdx:     0,
+    turnIdx:    0,
+    roundOrder: shuffle(ids),
+  });
+}
+
+function copyCode() {
+  navigator.clipboard.writeText(currentCode).then(()=>{
+    $f('btn-copy').textContent='Copied!';
+    setTimeout(()=>$f('btn-copy').textContent='Copy Code',2000);
+  });
+}
+
+// ── GAME ─────────────────────────────────────────────────────────
+function renderGame(room) {
+  const catIdx     = room.catIdx || 0;
+  const cat        = CATS[catIdx];
+  const roundOrder = room.roundOrder || [];
+  const turnIdx    = room.turnIdx    || 0;
+  const currentPid = roundOrder[turnIdx];
+  const isMyTurn   = currentPid === myId;
+  const players    = room.players || {};
+
+  // Rebuild usedSongs from Firebase state
+  usedSongs = new Set(Object.keys(room.usedSongs || {}));
+
+  // Progress
+  $f('progress-bar').innerHTML = CATS.map((_,i)=>{
+    let cls='pstep';
+    if(i<catIdx) cls+=' done';
+    else if(i===catIdx) cls+=' current';
+    return `<div class="${cls}"></div>`;
+  }).join('');
+  $f('prog-cat-label').textContent  = `${cat.emoji} ${cat.label}`;
+  $f('prog-step-label').textContent = `Pick ${turnIdx+1} of ${roundOrder.length}`;
+  $f('cat-badge').textContent       = `${cat.emoji} ${cat.label}`;
+
+  if (isMyTurn) {
+    $f('picking-ui').style.display = 'block';
+    $f('waiting-ui').style.display = 'none';
+    $f('turn-sub').textContent     = `Round ${catIdx+1} of ${CATS.length}`;
+    setTimeout(()=>$f('song-input').focus(), 80);
+  } else {
+    $f('picking-ui').style.display = 'none';
+    $f('waiting-ui').style.display = 'block';
+    const pname = (players[currentPid]||{}).name || '...';
+    $f('waiting-name').textContent = pname.toUpperCase();
+  }
+
+  // Round preview (picks already made this round)
+  const guesses      = ((room.guesses||{})[catIdx]) || {};
+  const guessedSoFar = roundOrder.slice(0,turnIdx).filter(pid=>guesses[pid]);
+  const preview      = $f('preview');
+  if (guessedSoFar.length) {
+    preview.style.display = 'block';
+    $f('preview-rows').innerHTML = guessedSoFar.map(pid=>`
+      <div class="pg-row">
+        <span class="pg-player">${escH((players[pid]||{}).name||pid)}</span>
+        <span class="pg-song">${escH(guesses[pid]||'—')}</span>
+      </div>`).join('');
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+// ── SUBMIT GUESS ─────────────────────────────────────────────────
+$f('btn-submit').addEventListener('click', submitGuess);
+
+async function submitGuess() {
+  const song = $f('song-input').value.trim();
+  if (!song) { $f('song-input').focus(); return; }
+
+  if (usedSongs.has(norm(song))) {
+    alert(`"${song}" is already taken! Pick a different song.`);
+    $f('song-input').select();
+    return;
+  }
+
+  $f('btn-submit').disabled = true;
+  try {
+    const snap = await db.ref(`rooms/${currentCode}`).once('value');
+    const room = snap.val();
+    const { catIdx, roundOrder, turnIdx } = room;
+
+    await db.ref(`rooms/${currentCode}/guesses/${catIdx}/${myId}`).set(song);
+    await db.ref(`rooms/${currentCode}/usedSongs/${norm(song)}`).set(true);
+
+    if (turnIdx + 1 >= roundOrder.length) {
+      const newCat = catIdx + 1;
+      if (newCat >= CATS.length) {
+        await db.ref(`rooms/${currentCode}/status`).set('scoring');
+      } else {
+        const rest     = shuffle(roundOrder.filter(p=>p!==myId));
+        const newOrder = [myId, ...rest];
+        await db.ref(`rooms/${currentCode}`).update({ catIdx:newCat, turnIdx:0, roundOrder:newOrder });
+      }
+    } else {
+      await db.ref(`rooms/${currentCode}/turnIdx`).set(turnIdx+1);
+    }
+
+    $f('song-input').value = '';
+    hideAC();
+  } finally {
+    $f('btn-submit').disabled = false;
+  }
+}
+
+// ── AUTOCOMPLETE ─────────────────────────────────────────────────
+const songInput = $f('song-input');
+const acList    = $f('ac-list');
+let   acActive  = -1;
+
+songInput.addEventListener('input', ()=>{
+  const q = songInput.value.trim().toLowerCase();
+  if (!q) { hideAC(); return; }
+  const hits = SONGS.filter(s=>s.toLowerCase().includes(q)).slice(0,15);
+  if (!hits.length) { hideAC(); return; }
+
+  acList.innerHTML = hits.map(s=>{
+    const taken = usedSongs.has(norm(s));
+    return `<div class="ac-item${taken?' used':''}" data-s="${escH(s)}">
+      ${escH(s)}${taken?'<span class="ac-taken-tag">Taken</span>':''}
+    </div>`;
+  }).join('');
+
+  acList.querySelectorAll('.ac-item:not(.used)').forEach(el=>{
+    el.addEventListener('mousedown', e=>{ e.preventDefault(); pick(el.dataset.s); });
+    el.addEventListener('mouseenter', ()=>{
+      setAcActive([...acList.querySelectorAll('.ac-item:not(.used)')].indexOf(el));
     });
   });
-
   acList.classList.add('open');
   acActive = -1;
 });
 
-songInput.addEventListener('keydown', e => {
+songInput.addEventListener('keydown', e=>{
   const avail = [...acList.querySelectorAll('.ac-item:not(.used)')];
-  if (!acList.classList.contains('open')) {
-    if (e.key === 'Enter') submitGuess();
-    return;
-  }
-  if (e.key === 'ArrowDown') {
-    e.preventDefault();
-    setAcActive(Math.min(acActive + 1, avail.length - 1));
-  } else if (e.key === 'ArrowUp') {
-    e.preventDefault();
-    setAcActive(Math.max(acActive - 1, -1));
-  } else if (e.key === 'Enter') {
-    e.preventDefault();
-    if (acActive >= 0 && avail[acActive]) pick(avail[acActive].dataset.s);
-    else submitGuess();
-  } else if (e.key === 'Escape') {
-    hideAC();
-  }
+  if (!acList.classList.contains('open')) { if(e.key==='Enter') submitGuess(); return; }
+  if (e.key==='ArrowDown')  { e.preventDefault(); setAcActive(Math.min(acActive+1,avail.length-1)); }
+  else if (e.key==='ArrowUp')  { e.preventDefault(); setAcActive(Math.max(acActive-1,-1)); }
+  else if (e.key==='Enter')    { e.preventDefault(); if(acActive>=0&&avail[acActive]) pick(avail[acActive].dataset.s); else submitGuess(); }
+  else if (e.key==='Escape')   { hideAC(); }
 });
-
-document.addEventListener('click', e => {
-  if (!e.target.closest('.ac-wrap')) hideAC();
-});
+document.addEventListener('click', e=>{ if(!e.target.closest('.ac-wrap')) hideAC(); });
 
 function setAcActive(idx) {
-  const avail = [...acList.querySelectorAll('.ac-item:not(.used)')];
-  acActive = idx;
-  avail.forEach((el, i) => el.classList.toggle('hi', i === idx));
-  if (idx >= 0 && avail[idx]) songInput.value = avail[idx].dataset.s;
+  const avail=[...acList.querySelectorAll('.ac-item:not(.used)')];
+  acActive=idx;
+  avail.forEach((el,i)=>el.classList.toggle('hi',i===idx));
+  if(idx>=0&&avail[idx]) songInput.value=avail[idx].dataset.s;
 }
+function pick(song) { songInput.value=song; hideAC(); songInput.focus(); }
+function hideAC()   { acList.classList.remove('open'); acList.innerHTML=''; acActive=-1; }
 
-function pick(song) {
-  songInput.value = song;
-  hideAC();
-  songInput.focus();
-}
+// ── SCORE SCREEN ──────────────────────────────────────────────────
+let cachedRoom = null;
 
-function hideAC() {
-  acList.classList.remove('open');
-  acList.innerHTML = '';
-  acActive = -1;
-}
-
-// ════════════════════════════════════════════════════════════════
-// SCORE SCREEN
-// ════════════════════════════════════════════════════════════════
-function buildResultsTable(actuals, scores) {
-  const normActuals = (actuals || []).map(normalize);
-  const headers = ['Player', ...CATS.map(c => c.short)];
-
-  const rows = G.players.map((name, pIdx) => {
-    const cells = CATS.map((_, ci) => {
-      const guess = G.guesses[ci][pIdx] || '—';
-      if (!actuals) return `<td>${escHtml(guess)}</td>`;
-      const correct = normActuals[ci] && normalize(guess) === normActuals[ci];
-      const cls = actuals[ci] ? (correct ? 'td-correct' : 'td-wrong') : '';
-      return `<td class="${cls}">${escHtml(guess)}${correct ? ' ✓' : ''}</td>`;
-    }).join('');
-
-    const chip = scores
-      ? `<span class="score-chip">${scores[pIdx].pts} pts</span>`
-      : '';
-    return `<tr><td class="td-player">${escHtml(name)}${chip}</td>${cells}</tr>`;
-  }).join('');
-
-  return `
-    <thead><tr>${headers.map(h => `<th>${escHtml(h)}</th>`).join('')}</tr></thead>
-    <tbody>${rows}</tbody>
-  `;
-}
-
-function showScoreScreen() {
-  $('results-table').innerHTML = buildResultsTable(null, null);
-
-  $('score-inputs').innerHTML = CATS.map((c, i) => `
-    <div class="score-row">
-      <div class="score-cat">${c.emoji} ${c.short}</div>
-      <input type="text" id="actual-${i}" placeholder="Actual song played…" autocomplete="off">
-    </div>
-  `).join('');
-
-  $('final-scores-card').style.display = 'none';
-  $('btn-save-stats').textContent = 'Save to All-Time Stats ★';
-  $('btn-save-stats').disabled = false;
-  $('btn-save-stats').style.background = '';
-
-  showScreen('s-score');
-}
-
-$('btn-calc').addEventListener('click', () => {
-  const actuals     = CATS.map((_, i) => ($(`actual-${i}`).value.trim()));
-  const normActuals = actuals.map(normalize);
-
-  const scores = G.players.map((name, pIdx) => {
-    let pts = 0, correct = 0;
-    CATS.forEach((cat, ci) => {
-      const guess = G.guesses[ci][pIdx] || '';
-      if (normActuals[ci] && normalize(guess) === normActuals[ci]) {
-        pts += cat.pts;
-        correct++;
-      }
+function renderScoreScreen(room) {
+  cachedRoom = room;
+  if (!scoreUIBuilt) {
+    buildScoreUI(room);
+    scoreUIBuilt = true;
+    scoresRef = db.ref(`rooms/${currentCode}/scores`);
+    scoresRef.on('value', snap=>{
+      const scores = snap.val() || {};
+      syncToggleButtons(room, scores);
+      renderTotals(room, scores);
     });
-    return { name, pts, correct, total: CATS.length };
-  });
+  }
+}
 
-  G.sessionScores = scores;
+function buildScoreUI(room) {
+  const players    = room.players    || {};
+  const roundOrder = room.roundOrder || Object.keys(players);
 
-  $('results-table').innerHTML = buildResultsTable(actuals, scores);
-
-  const sorted = [...scores].sort((a, b) => b.pts - a.pts);
-  $('final-scores-list').innerHTML = sorted.map((s, i) => {
-    const cls = ['r1','r2','r3'][i] || 'rn';
+  $f('score-categories').innerHTML = CATS.map((cat,ci)=>{
+    const guesses = ((room.guesses||{})[ci]) || {};
+    const rows    = roundOrder.map(pid=>{
+      const name = (players[pid]||{}).name || pid;
+      const song = guesses[pid] || '—';
+      return `
+        <div class="score-guess-row">
+          <div class="score-player-name">${escH(name)}</div>
+          <div class="score-song">${escH(song)}</div>
+          <div class="pts-toggle" id="tgl-${ci}-${pid.replace(/[^a-z0-9]/gi,'_')}">
+            <button class="pts-toggle-btn sel-0" data-ci="${ci}" data-pid="${escH(pid)}" data-val="0" onclick="setScoreRemote(this)">0</button>
+            <button class="pts-toggle-btn"       data-ci="${ci}" data-pid="${escH(pid)}" data-val="1" onclick="setScoreRemote(this)">1 pt</button>
+            <button class="pts-toggle-btn"       data-ci="${ci}" data-pid="${escH(pid)}" data-val="2" onclick="setScoreRemote(this)">2 pts</button>
+          </div>
+        </div>`;
+    }).join('');
     return `
-      <div class="lb-row">
-        <div class="lb-rank ${cls}">${i + 1}</div>
-        <div class="lb-info">
-          <div class="lb-name">${escHtml(s.name)}</div>
-          <div class="lb-detail">${s.correct} correct of ${s.total}</div>
+      <div class="score-cat-section">
+        <div class="score-cat-header">
+          <div class="score-cat-name">${cat.emoji} ${cat.label}</div>
         </div>
-        <div>
-          <div class="lb-pts">${s.pts}</div>
-          <div class="lb-pts-label">PTS</div>
-        </div>
+        ${rows}
       </div>`;
   }).join('');
 
-  $('final-scores-card').style.display = 'block';
-  $('final-scores-card').scrollIntoView({ behavior: 'smooth' });
-});
-
-$('btn-save-stats').addEventListener('click', () => {
-  if (!G.sessionScores || G.statsSaved) return;
-  addSessionToStats(G.sessionScores);
-  G.statsSaved = true;
-  const btn = $('btn-save-stats');
-  btn.textContent = 'Saved! ✓';
-  btn.disabled = true;
-  btn.style.background = 'var(--green-dk)';
-});
-
-$('btn-again').addEventListener('click', resetAndPlayAgain);
-$('btn-skip-score').addEventListener('click', resetAndPlayAgain);
-
-function resetAndPlayAgain() {
-  const count = G.playerCount;
-  newGame();
-  G.playerCount = count;
-  $('pick-num').textContent = count;
-  navTo('play');
+  $f('saved-banner').style.display = 'none';
+  const saveBtn = $f('btn-save-session');
+  saveBtn.textContent = 'Save to All-Time Stats ★';
+  saveBtn.disabled    = false;
+  saveBtn.style.background = '';
+  renderTotals(room, {});
 }
 
-// ════════════════════════════════════════════════════════════════
-// OPTIONAL: Extend song list from phish.net API
-// ════════════════════════════════════════════════════════════════
-(async () => {
-  try {
-    const r = await fetch('https://api.phish.net/v5/songs.json', {
-      signal: AbortSignal.timeout(5000),
+async function setScoreRemote(btn) {
+  const ci  = btn.dataset.ci;
+  const pid = btn.dataset.pid;
+  const val = parseInt(btn.dataset.val, 10);
+  await db.ref(`rooms/${currentCode}/scores/${ci}/${pid}`).set(val);
+}
+
+function syncToggleButtons(room, scores) {
+  const players    = room.players    || {};
+  const roundOrder = room.roundOrder || Object.keys(players);
+  CATS.forEach((_,ci)=>{
+    roundOrder.forEach(pid=>{
+      const val = ((scores[ci])||{})[pid] || 0;
+      const safeId = pid.replace(/[^a-z0-9]/gi,'_');
+      const tgl  = $f(`tgl-${ci}-${safeId}`);
+      if (!tgl) return;
+      const btns = tgl.querySelectorAll('.pts-toggle-btn');
+      btns[0].className = `pts-toggle-btn ${val===0?'sel-0':''}`;
+      btns[1].className = `pts-toggle-btn ${val===1?'sel-1':''}`;
+      btns[2].className = `pts-toggle-btn ${val===2?'sel-2':''}`;
     });
+  });
+}
+
+function renderTotals(room, scores) {
+  const players    = room.players    || {};
+  const roundOrder = room.roundOrder || Object.keys(players);
+  $f('totals-row').innerHTML = roundOrder.map(pid=>{
+    const name = (players[pid]||{}).name || pid;
+    const pts  = CATS.reduce((sum,_,ci)=>sum+(((scores[ci])||{})[pid]||0), 0);
+    return `<div class="total-chip">
+      <span class="total-chip-name">${escH(name)}</span>
+      <span class="total-chip-pts">${pts}</span>
+      <span class="total-chip-label">pts</span>
+    </div>`;
+  }).join('');
+}
+
+// ── SAVE SESSION ──────────────────────────────────────────────────
+async function saveSession() {
+  if (!cachedRoom) return;
+  const scoresSnap = await db.ref(`rooms/${currentCode}/scores`).once('value');
+  const scores     = scoresSnap.val() || {};
+  const players    = cachedRoom.players    || {};
+  const roundOrder = cachedRoom.roundOrder || Object.keys(players);
+
+  const sessionScores = roundOrder.map(pid=>({
+    name: (players[pid]||{}).name || pid,
+    pts:  CATS.reduce((sum,_,ci)=>sum+(((scores[ci])||{})[pid]||0), 0),
+  }));
+
+  const date  = new Date().toISOString().slice(0,10);
+  const entry = { date, scores:{} };
+  sessionScores.forEach(({name,pts})=>{
+    entry.scores[name] = pts;
+    if (!allTimeStats.players[name]) allTimeStats.players[name] = { pts:0, sessions:0 };
+    allTimeStats.players[name].pts += pts;
+    allTimeStats.players[name].sessions++;
+  });
+  allTimeStats.sessions.push(entry);
+
+  $f('saved-banner').style.display = 'block';
+  const btn = $f('btn-save-session');
+  btn.textContent = 'Saved ✓';
+  btn.disabled    = true;
+  btn.style.background = 'var(--green-dk)';
+}
+
+// ── ALL-TIME STATS ────────────────────────────────────────────────
+let allTimeStats = { players:{}, sessions:[] };
+
+function exportStats() {
+  const blob = new Blob([JSON.stringify(allTimeStats,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'phishkings-stats.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importStats(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data&&data.players) { allTimeStats=data; renderLeaderboard(); alert('Stats imported!'); }
+      else alert('Invalid stats file.');
+    } catch(_) { alert('Could not read stats file.'); }
+  };
+  reader.readAsText(file);
+  evt.target.value='';
+}
+
+function clearStats() {
+  if (!confirm('Reset ALL all-time stats? This cannot be undone.')) return;
+  allTimeStats = { players:{}, sessions:[] };
+  renderLeaderboard();
+}
+
+function renderLeaderboard() {
+  const entries = Object.entries(allTimeStats.players)
+    .map(([name,d])=>({name,...d}))
+    .sort((a,b)=>b.pts-a.pts);
+
+  if (!entries.length) {
+    $f('lb-list').innerHTML=`<div class="empty-state"><div class="empty-icon">♛</div><p>No stats yet. Score a session and save it to start tracking.</p></div>`;
+    return;
+  }
+  $f('lb-list').innerHTML = entries.map((e,i)=>{
+    const cls=['r1','r2','r3'][i]||'rn';
+    return `<div class="lb-row">
+      <div class="lb-rank ${cls}">${i+1}</div>
+      <div class="lb-info">
+        <div class="lb-name">${escH(e.name)}</div>
+        <div class="lb-detail">${e.sessions} session${e.sessions!==1?'s':''}</div>
+      </div>
+      <div>
+        <div class="lb-pts">${e.pts}</div>
+        <div class="lb-pts-label">PTS</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── PHISH.NET SONG EXTENSION ──────────────────────────────────────
+(async()=>{
+  try {
+    const r = await fetch('https://api.phish.net/v5/songs.json',{signal:AbortSignal.timeout(5000)});
     if (!r.ok) return;
     const json = await r.json();
-    const apiSongs = (json.data || []).map(s => s.song).filter(Boolean);
-    if (apiSongs.length > 0) SONGS = [...new Set([...SONGS, ...apiSongs])].sort();
-  } catch (_) {}
+    const api  = (json.data||[]).map(s=>s.song).filter(Boolean);
+    if (api.length) SONGS=[...new Set([...SONGS,...api])].sort();
+  } catch(_){}
 })();
 </script>
 </body>
