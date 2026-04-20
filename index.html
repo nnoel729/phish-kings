@@ -148,6 +148,12 @@ input[type=text]::placeholder { color:var(--text-3); }
 
 .saved-banner { background:rgba(87,214,43,.1); border:1px solid rgba(87,214,43,.3); border-radius:4px; padding:.75rem 1rem; color:var(--green); font-weight:700; font-size:.9rem; text-align:center; margin-bottom:.75rem; display:none; }
 
+/* SETLIST */
+.actual-tag { display:inline-flex; align-items:center; gap:.3rem; font-size:.73rem; color:var(--gold); font-weight:700; background:rgba(240,196,10,.1); border:1px solid rgba(240,196,10,.3); border-radius:3px; padding:.15rem .5rem; margin-left:.6rem; }
+.setlist-body { font-size:.82rem; color:var(--text-2); line-height:1.7; }
+.setlist-set-label { font-size:.68rem; text-transform:uppercase; letter-spacing:.09em; color:var(--text-3); font-weight:700; margin-top:.5rem; display:block; }
+.setlist-set-label:first-child { margin-top:0; }
+
 /* LEADERBOARD */
 .lb-row { display:flex; align-items:center; padding:.8rem 0; border-bottom:1px solid var(--border); gap:1rem; }
 .lb-row:last-child { border-bottom:none; }
@@ -286,6 +292,17 @@ input[type=text]::placeholder { color:var(--text-3); }
   <div class="score-totals">
     <div class="score-totals-title">Running Totals</div>
     <div class="totals-row" id="totals-row"></div>
+  </div>
+  <div class="card" id="setlist-card">
+    <div class="card-title">Actual Setlist</div>
+    <div style="display:flex;gap:.6rem;align-items:flex-end">
+      <div style="flex:1">
+        <label for="show-date-input">Show Date (YYYY-MM-DD)</label>
+        <input type="text" id="show-date-input" placeholder="e.g. 2025-07-04" autocomplete="off">
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="fetchSetlist()" id="btn-fetch-setlist" style="margin-bottom:2px">Load ↓</button>
+    </div>
+    <div id="setlist-result" style="margin-top:.75rem"></div>
   </div>
   <div class="card">
     <div id="score-categories"></div>
@@ -865,6 +882,7 @@ function buildScoreUI(room) {
       <div class="score-cat-section">
         <div class="score-cat-header">
           <div class="score-cat-name">${cat.emoji} ${cat.label}</div>
+          <div id="actual-${ci}"></div>
         </div>
         ${rows}
       </div>`;
@@ -873,6 +891,11 @@ function buildScoreUI(room) {
   $f('score-sub').textContent = amHost
     ? '0 = no score · 1pt = played wrong spot · 2pts = exact hit'
     : '👀 Watch the host score the show live';
+
+  // Try to pre-fill show date from venue input
+  const venueStr = $f('venue-input')?.value || '';
+  const autoDate = parseDateFromVenue(venueStr);
+  if (autoDate && !$f('show-date-input').value) $f('show-date-input').value = autoDate;
 
   $f('saved-banner').style.display = 'none';
   const saveBtn = $f('btn-save-session');
@@ -1028,6 +1051,97 @@ function renderLeaderboard() {
   } else {
     histCard.style.display = 'none';
   }
+}
+
+// ── DATE HELPERS ─────────────────────────────────────────────────
+function parseDateFromVenue(str) {
+  // ISO: 2024-12-31
+  let m = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  // MM/DD/YYYY or MM/DD/YY
+  m = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (m) {
+    const yr = m[3].length === 2 ? (parseInt(m[3],10) > 50 ? '19' : '20') + m[3] : m[3];
+    return `${yr}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+  }
+  return null;
+}
+
+// Auto-fill show date when venue field changes
+document.addEventListener('DOMContentLoaded', ()=>{
+  $f('venue-input')?.addEventListener('input', ()=>{
+    const d = parseDateFromVenue($f('venue-input').value);
+    if (d) $f('show-date-input').value = d;
+  });
+});
+
+// ── PHISH.NET SETLIST ─────────────────────────────────────────────
+const PHISHNET_KEY = 'ECD0B0C76E6511A16B74';
+
+async function fetchSetlist() {
+  const dateVal = ($f('show-date-input').value || '').trim();
+  if (!dateVal) { showSetlistMsg('Enter a show date (YYYY-MM-DD).', 'var(--text-3)'); return; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) { showSetlistMsg('Use YYYY-MM-DD format.', 'var(--red)'); return; }
+
+  const btn = $f('btn-fetch-setlist');
+  btn.disabled = true;
+  showSetlistMsg('Loading…', 'var(--text-3)');
+
+  try {
+    const r = await fetch(
+      `https://api.phish.net/v5/setlists/showdate/${dateVal}.json?apikey=${PHISHNET_KEY}`,
+      { signal: AbortSignal.timeout(8000) }
+    );
+    if (!r.ok) throw new Error('http');
+    const json = await r.json();
+
+    if (json.error || !json.data || !json.data.length) {
+      showSetlistMsg('No setlist found for that date.', 'var(--text-3)');
+      return;
+    }
+
+    const songs = json.data;
+    const bySet = k => songs.filter(s=>s.set===k).sort((a,b)=>a.position-b.position);
+    const s1 = bySet('1'), s2 = bySet('2');
+    const enc = [...bySet('e'), ...bySet('e2')];
+
+    // Map to categories: 0=Opener 1=S1Closer 2=S2Opener 3=S2Closer 4=Encore 5=Bustout 6=Wildcard
+    const actual = {
+      0: s1[0]?.song            || null,
+      1: s1[s1.length-1]?.song  || null,
+      2: s2[0]?.song            || null,
+      3: s2[s2.length-1]?.song  || null,
+      4: enc.map(s=>s.song).join(' > ') || null,
+    };
+    showActualSongs(actual);
+
+    // Full setlist display for Bustout/Wildcard reference
+    const fmtSet = arr => arr.map(s=>escH(s.song)).join(' <span style="color:var(--text-3)">›</span> ');
+    $f('setlist-result').innerHTML = `<div class="setlist-body">
+      <span class="setlist-set-label">Set 1</span>${fmtSet(s1)}
+      <span class="setlist-set-label">Set 2</span>${fmtSet(s2)}
+      ${enc.length ? `<span class="setlist-set-label">Encore</span>${fmtSet(enc)}` : ''}
+    </div>`;
+  } catch(_) {
+    showSetlistMsg('Could not load setlist — check your connection.', 'var(--red)');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function showActualSongs(actual) {
+  CATS.forEach((_,ci)=>{
+    const el = $f(`actual-${ci}`);
+    if (!el) return;
+    const song = actual[ci];
+    el.innerHTML = song
+      ? `<span class="actual-tag">✓ ${escH(song)}</span>`
+      : '';
+  });
+}
+
+function showSetlistMsg(msg, color) {
+  $f('setlist-result').innerHTML = `<span style="color:${color};font-size:.85rem">${escH(msg)}</span>`;
 }
 
 // ── AUTO-REJOIN ON LOAD ───────────────────────────────────────────
