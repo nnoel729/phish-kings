@@ -8,6 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
 <style>
 :root {
   --bg:       #13151c;
@@ -95,6 +96,7 @@ input[type=text]::placeholder { color:var(--text-3); }
 .waiting-label { font-size:.75rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-3); font-weight:700; margin-bottom:.4rem; }
 .waiting-name { font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:2.6rem; color:var(--text-2); text-transform:uppercase; line-height:1; }
 .waiting-sub { color:var(--text-3); font-size:.85rem; margin-top:.5rem; }
+.waiting-count { color:var(--green); font-size:.88rem; font-weight:700; margin-top:.4rem; letter-spacing:.04em; }
 
 /* PICKING STATE */
 .your-turn-banner { background:rgba(87,214,43,.1); border:1px solid rgba(87,214,43,.3); border-radius:6px; padding:.75rem 1rem; text-align:center; color:var(--green); font-weight:700; font-size:1rem; margin-bottom:1rem; }
@@ -251,6 +253,7 @@ input[type=text]::placeholder { color:var(--text-3); }
         <div class="waiting-label">Waiting for</div>
         <div class="waiting-name" id="waiting-name">—</div>
         <div class="waiting-sub">to make their pick…</div>
+        <div class="waiting-count" id="waiting-count"></div>
       </div>
     </div>
 
@@ -290,6 +293,8 @@ input[type=text]::placeholder { color:var(--text-3); }
   <div class="saved-banner" id="saved-banner">Saved to all-time stats ✓</div>
   <div class="card">
     <div class="card-title">Wrap Up</div>
+    <label for="venue-input">Show / Venue (optional)</label>
+    <input type="text" id="venue-input" placeholder="e.g. MSG – 12/31/24" autocomplete="off" style="margin-bottom:.75rem">
     <button class="btn btn-primary" id="btn-save-session" onclick="saveSession()">Save to All-Time Stats ★</button>
     <button class="btn btn-ghost" onclick="exportStats()" style="margin-top:.5rem">⬇ Export phishkings-stats.json</button>
     <button class="btn btn-ghost" onclick="leaveRoom()" style="margin-top:.5rem">Play Again</button>
@@ -312,6 +317,10 @@ input[type=text]::placeholder { color:var(--text-3); }
       <button class="btn btn-primary" onclick="exportStats()">⬇ Export JSON</button>
     </div>
     <input type="file" id="file-import" accept=".json" onchange="importStats(event)" style="display:none">
+  </div>
+  <div class="card" id="session-history-card" style="display:none">
+    <div class="card-title">Session History</div>
+    <div id="session-history-list"></div>
   </div>
   <div class="tr-right" style="margin-top:.5rem">
     <button class="btn btn-danger btn-sm" onclick="clearStats()">Reset All Stats</button>
@@ -671,7 +680,8 @@ function renderGame(room) {
     $f('picking-ui').style.display = 'none';
     $f('waiting-ui').style.display = 'block';
     const pname = (players[currentPid]||{}).name || '...';
-    $f('waiting-name').textContent = pname.toUpperCase();
+    $f('waiting-name').textContent  = pname.toUpperCase();
+    $f('waiting-count').textContent = `${turnIdx} / ${roundOrder.length} picked`;
   }
 
   // Undo button — host only, only when at least one pick has been made this round
@@ -870,6 +880,10 @@ function buildScoreUI(room) {
   saveBtn.disabled    = false;
   saveBtn.style.background = '';
   renderTotals(room, {});
+
+  if (typeof confetti === 'function') {
+    setTimeout(()=>confetti({ particleCount:120, spread:80, colors:['#57d62b','#f0c40a','#ffffff'] }), 400);
+  }
 }
 
 async function setScoreRemote(btn) {
@@ -924,7 +938,8 @@ async function saveSession() {
   }));
 
   const date  = new Date().toISOString().slice(0,10);
-  const entry = { date, scores:{} };
+  const venue = ($f('venue-input')?.value || '').trim();
+  const entry = { date, ...(venue && { venue }), scores:{} };
   sessionScores.forEach(({name,pts})=>{
     entry.scores[name] = pts;
     if (!allTimeStats.players[name]) allTimeStats.players[name] = { pts:0, sessions:0 };
@@ -980,22 +995,39 @@ function renderLeaderboard() {
 
   if (!entries.length) {
     $f('lb-list').innerHTML=`<div class="empty-state"><div class="empty-icon">♛</div><p>No stats yet. Score a session and save it to start tracking.</p></div>`;
-    return;
+  } else {
+    $f('lb-list').innerHTML = entries.map((e,i)=>{
+      const cls=['r1','r2','r3'][i]||'rn';
+      return `<div class="lb-row">
+        <div class="lb-rank ${cls}">${i+1}</div>
+        <div class="lb-info">
+          <div class="lb-name">${escH(e.name)}</div>
+          <div class="lb-detail">${e.sessions} session${e.sessions!==1?'s':''}</div>
+        </div>
+        <div>
+          <div class="lb-pts">${e.pts}</div>
+          <div class="lb-pts-label">PTS</div>
+        </div>
+      </div>`;
+    }).join('');
   }
-  $f('lb-list').innerHTML = entries.map((e,i)=>{
-    const cls=['r1','r2','r3'][i]||'rn';
-    return `<div class="lb-row">
-      <div class="lb-rank ${cls}">${i+1}</div>
-      <div class="lb-info">
-        <div class="lb-name">${escH(e.name)}</div>
-        <div class="lb-detail">${e.sessions} session${e.sessions!==1?'s':''}</div>
-      </div>
-      <div>
-        <div class="lb-pts">${e.pts}</div>
-        <div class="lb-pts-label">PTS</div>
-      </div>
-    </div>`;
-  }).join('');
+
+  const histCard = $f('session-history-card');
+  const sessions = allTimeStats.sessions || [];
+  if (sessions.length) {
+    histCard.style.display = 'block';
+    $f('session-history-list').innerHTML = [...sessions].reverse().map(s=>{
+      const label = s.venue ? `${escH(s.venue)} — ${escH(s.date)}` : escH(s.date);
+      const scoreParts = Object.entries(s.scores).sort((a,b)=>b[1]-a[1])
+        .map(([n,p])=>`${escH(n)}: ${p}`).join(' · ');
+      return `<div class="lb-row" style="flex-direction:column;align-items:flex-start;gap:.2rem;padding:.6rem 0">
+        <div style="font-weight:700;font-size:.9rem">${label}</div>
+        <div style="font-size:.8rem;color:var(--text-3)">${scoreParts}</div>
+      </div>`;
+    }).join('');
+  } else {
+    histCard.style.display = 'none';
+  }
 }
 
 // ── AUTO-REJOIN ON LOAD ───────────────────────────────────────────
