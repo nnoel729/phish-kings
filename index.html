@@ -539,9 +539,16 @@ async function joinRoom() {
   const snap = await db.ref(`rooms/${code}`).once('value');
   if (!snap.exists()) { $f('join-err').textContent = 'Room not found.'; $f('btn-join').disabled=false; return; }
   const room = snap.val();
-  if (room.status !== 'lobby') { $f('join-err').textContent = 'Game already started.'; $f('btn-join').disabled=false; return; }
 
-  await db.ref(`rooms/${code}/players/${myId}`).set({ name: myName, joinedAt: Date.now() });
+  const alreadyInGame = room.players && room.players[myId];
+  if (room.status !== 'lobby' && !alreadyInGame) {
+    $f('join-err').textContent = 'Game already started.';
+    $f('btn-join').disabled=false;
+    return;
+  }
+
+  // Write/update player entry (covers both fresh join and rejoin)
+  await db.ref(`rooms/${code}/players/${myId}`).set({ name: myName, joinedAt: room.players?.[myId]?.joinedAt ?? Date.now() });
 
   currentCode = code;
   amHost      = false;
@@ -723,8 +730,9 @@ async function submitGuess() {
     // Revert optimistic update on failure
     $f('picking-ui').style.display = 'block';
     $f('waiting-ui').style.display = 'none';
-    $f('btn-submit').disabled = false;
     alert('Connection error — please try again.');
+  } finally {
+    $f('btn-submit').disabled = false;
   }
 }
 
