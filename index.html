@@ -265,6 +265,10 @@ input[type=text]::placeholder { color:var(--text-3); }
       <button class="btn btn-primary" id="btn-submit">Submit Pick ✓</button>
     </div>
 
+    <div id="undo-wrap" style="display:none;margin-top:.75rem">
+      <button class="btn btn-ghost" id="btn-undo" onclick="undoLastPick()">↩ Undo Last Pick</button>
+    </div>
+
     <div class="preview" id="preview" style="display:none">
       <div class="preview-title">Picks so far this round</div>
       <div id="preview-rows"></div>
@@ -670,6 +674,9 @@ function renderGame(room) {
     $f('waiting-name').textContent = pname.toUpperCase();
   }
 
+  // Undo button — host only, only when at least one pick has been made this round
+  $f('undo-wrap').style.display = (amHost && turnIdx > 0) ? 'block' : 'none';
+
   // Round preview (picks already made this round)
   const guesses      = ((room.guesses||{})[catIdx]) || {};
   const guessedSoFar = roundOrder.slice(0,turnIdx).filter(pid=>guesses[pid]);
@@ -733,6 +740,26 @@ async function submitGuess() {
     alert('Connection error — please try again.');
   } finally {
     $f('btn-submit').disabled = false;
+  }
+}
+
+// ── UNDO LAST PICK ────────────────────────────────────────────────
+async function undoLastPick() {
+  if (!lastRoom || !amHost) return;
+  const { catIdx, roundOrder, turnIdx } = lastRoom;
+  if (turnIdx === 0) return; // nothing to undo in this round
+
+  const prevIdx = turnIdx - 1;
+  const prevPid = roundOrder[prevIdx];
+  const prevSong = ((lastRoom.guesses||{})[catIdx]||{})[prevPid];
+
+  $f('btn-undo').disabled = true;
+  try {
+    await db.ref(`rooms/${currentCode}/guesses/${catIdx}/${prevPid}`).remove();
+    if (prevSong) await db.ref(`rooms/${currentCode}/usedSongs/${norm(prevSong)}`).remove();
+    await db.ref(`rooms/${currentCode}/turnIdx`).set(prevIdx);
+  } finally {
+    $f('btn-undo').disabled = false;
   }
 }
 
