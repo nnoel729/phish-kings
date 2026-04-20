@@ -275,7 +275,7 @@ input[type=text]::placeholder { color:var(--text-3); }
 <!-- SCORE -->
 <div id="s-score" class="screen">
   <div class="page-title">Score the Show</div>
-  <p class="page-sub">0 = no score &nbsp;·&nbsp; 1pt = played wrong spot &nbsp;·&nbsp; 2pts = exact hit</p>
+  <p class="page-sub" id="score-sub">0 = no score &nbsp;·&nbsp; 1pt = played wrong spot &nbsp;·&nbsp; 2pts = exact hit</p>
   <div class="score-totals">
     <div class="score-totals-title">Running Totals</div>
     <div class="totals-row" id="totals-row"></div>
@@ -818,9 +818,9 @@ function buildScoreUI(room) {
           <div class="score-player-name">${escH(name)}</div>
           <div class="score-song">${escH(song)}</div>
           <div class="pts-toggle" id="tgl-${ci}-${pid.replace(/[^a-z0-9]/gi,'_')}">
-            <button class="pts-toggle-btn sel-0" data-ci="${ci}" data-pid="${escH(pid)}" data-val="0" onclick="setScoreRemote(this)">0</button>
-            <button class="pts-toggle-btn"       data-ci="${ci}" data-pid="${escH(pid)}" data-val="1" onclick="setScoreRemote(this)">1 pt</button>
-            <button class="pts-toggle-btn"       data-ci="${ci}" data-pid="${escH(pid)}" data-val="2" onclick="setScoreRemote(this)">2 pts</button>
+            <button class="pts-toggle-btn sel-0" data-ci="${ci}" data-pid="${escH(pid)}" data-val="0" ${amHost?`onclick="setScoreRemote(this)"`:'disabled'}>0</button>
+            <button class="pts-toggle-btn"       data-ci="${ci}" data-pid="${escH(pid)}" data-val="1" ${amHost?`onclick="setScoreRemote(this)"`:'disabled'}>1 pt</button>
+            <button class="pts-toggle-btn"       data-ci="${ci}" data-pid="${escH(pid)}" data-val="2" ${amHost?`onclick="setScoreRemote(this)"`:'disabled'}>2 pts</button>
           </div>
         </div>`;
     }).join('');
@@ -832,6 +832,10 @@ function buildScoreUI(room) {
         ${rows}
       </div>`;
   }).join('');
+
+  $f('score-sub').textContent = amHost
+    ? '0 = no score · 1pt = played wrong spot · 2pts = exact hit'
+    : '👀 Watch the host score the show live';
 
   $f('saved-banner').style.display = 'none';
   const saveBtn = $f('btn-save-session');
