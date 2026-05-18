@@ -419,6 +419,7 @@ firebase.initializeApp({
   appId:             "1:504619702836:web:481ab38f114a050fba8861",
 });
 const db = firebase.database();
+const DB_PREFIX = 'games/openthegate';
 
 // ── SESSION ─────────────────────────────────────────────────────
 // localStorage so myId survives page refreshes
@@ -482,7 +483,7 @@ async function tryRejoin() {
   if (!code || !name) { clearPersistedSession(); return; }
 
   try {
-    const snap = await db.ref(`rooms/${code}`).once('value');
+    const snap = await db.ref(`${DB_PREFIX}/rooms/${code}`).once('value');
     if (!snap.exists()) { clearPersistedSession(); return; }
     const room = snap.val();
     if (!room.players || !room.players[myId]) { clearPersistedSession(); return; }
@@ -504,8 +505,8 @@ async function tryRejoin() {
 function leaveRoom() {
   if (roomRef) {
     roomRef.off('value');
-    db.ref(`rooms/${currentCode}/players/${myId}`).remove();
-    if (amHost) db.ref(`rooms/${currentCode}`).remove();
+    db.ref(`${DB_PREFIX}/rooms/${currentCode}/players/${myId}`).remove();
+    if (amHost) db.ref(`${DB_PREFIX}/rooms/${currentCode}`).remove();
     roomRef = null;
   }
   if (scoresRef) { scoresRef.off('value'); scoresRef = null; }
@@ -531,11 +532,11 @@ async function createRoom() {
   let code;
   for (let i=0; i<10; i++) {
     code = (Math.floor(Math.random()*9000)+1000).toString();
-    const snap = await db.ref(`rooms/${code}`).once('value');
+    const snap = await db.ref(`${DB_PREFIX}/rooms/${code}`).once('value');
     if (!snap.exists()) break;
   }
 
-  await db.ref(`rooms/${code}`).set({
+  await db.ref(`${DB_PREFIX}/rooms/${code}`).set({
     hostId:     myId,
     status:     'lobby',
     catIdx:     0,
@@ -566,7 +567,7 @@ async function joinRoom() {
   $f('btn-join').disabled = true;
   myName = name;
 
-  const snap = await db.ref(`rooms/${code}`).once('value');
+  const snap = await db.ref(`${DB_PREFIX}/rooms/${code}`).once('value');
   if (!snap.exists()) { $f('join-err').textContent = 'Room not found.'; $f('btn-join').disabled=false; return; }
   const room = snap.val();
 
@@ -578,7 +579,7 @@ async function joinRoom() {
   }
 
   // Write/update player entry (covers both fresh join and rejoin)
-  await db.ref(`rooms/${code}/players/${myId}`).set({ name: myName, joinedAt: room.players?.[myId]?.joinedAt ?? Date.now() });
+  await db.ref(`${DB_PREFIX}/rooms/${code}/players/${myId}`).set({ name: myName, joinedAt: room.players?.[myId]?.joinedAt ?? Date.now() });
 
   currentCode = code;
   amHost      = false;
@@ -591,7 +592,7 @@ async function joinRoom() {
 
 // ── LISTEN ───────────────────────────────────────────────────────
 function startListening(code) {
-  roomRef = db.ref(`rooms/${code}`);
+  roomRef = db.ref(`${DB_PREFIX}/rooms/${code}`);
   roomRef.on('value', snap => {
     if (!snap.exists()) { leaveRoom(); return; }
     handleRoom(snap.val());
@@ -644,12 +645,12 @@ function renderLobby(room) {
 }
 
 async function startGame() {
-  const snap = await db.ref(`rooms/${currentCode}/players`).once('value');
+  const snap = await db.ref(`${DB_PREFIX}/rooms/${currentCode}/players`).once('value');
   const players = snap.val() || {};
   const ids     = Object.keys(players).sort((a,b)=>players[a].joinedAt-players[b].joinedAt);
   if (ids.length < 2) { alert('Need at least 2 players!'); return; }
 
-  await db.ref(`rooms/${currentCode}`).update({
+  await db.ref(`${DB_PREFIX}/rooms/${currentCode}`).update({
     status:     'playing',
     catIdx:     0,
     turnIdx:    0,
@@ -744,19 +745,19 @@ async function submitGuess() {
   hideAC();
 
   try {
-    await db.ref(`rooms/${currentCode}/guesses/${catIdx}/${myId}`).set(song);
-    await db.ref(`rooms/${currentCode}/usedSongs/${norm(song)}`).set(true);
+    await db.ref(`${DB_PREFIX}/rooms/${currentCode}/guesses/${catIdx}/${myId}`).set(song);
+    await db.ref(`${DB_PREFIX}/rooms/${currentCode}/usedSongs/${norm(song)}`).set(true);
 
     if (turnIdx + 1 >= roundOrder.length) {
       const newCat = catIdx + 1;
       if (newCat >= CATS.length) {
-        await db.ref(`rooms/${currentCode}/status`).set('scoring');
+        await db.ref(`${DB_PREFIX}/rooms/${currentCode}/status`).set('scoring');
       } else {
         const rest = shuffle(roundOrder.filter(p=>p!==myId));
-        await db.ref(`rooms/${currentCode}`).update({ catIdx:newCat, turnIdx:0, roundOrder:[myId,...rest] });
+        await db.ref(`${DB_PREFIX}/rooms/${currentCode}`).update({ catIdx:newCat, turnIdx:0, roundOrder:[myId,...rest] });
       }
     } else {
-      await db.ref(`rooms/${currentCode}/turnIdx`).set(turnIdx+1);
+      await db.ref(`${DB_PREFIX}/rooms/${currentCode}/turnIdx`).set(turnIdx+1);
     }
 
     $f('song-input').value = '';
@@ -782,9 +783,9 @@ async function undoLastPick() {
 
   $f('btn-undo').disabled = true;
   try {
-    await db.ref(`rooms/${currentCode}/guesses/${catIdx}/${prevPid}`).remove();
-    if (prevSong) await db.ref(`rooms/${currentCode}/usedSongs/${norm(prevSong)}`).remove();
-    await db.ref(`rooms/${currentCode}/turnIdx`).set(prevIdx);
+    await db.ref(`${DB_PREFIX}/rooms/${currentCode}/guesses/${catIdx}/${prevPid}`).remove();
+    if (prevSong) await db.ref(`${DB_PREFIX}/rooms/${currentCode}/usedSongs/${norm(prevSong)}`).remove();
+    await db.ref(`${DB_PREFIX}/rooms/${currentCode}/turnIdx`).set(prevIdx);
   } finally {
     $f('btn-undo').disabled = false;
   }
@@ -849,7 +850,7 @@ function renderScoreScreen(room) {
   if (!scoreUIBuilt) {
     buildScoreUI(room);
     scoreUIBuilt = true;
-    scoresRef = db.ref(`rooms/${currentCode}/scores`);
+    scoresRef = db.ref(`${DB_PREFIX}/rooms/${currentCode}/scores`);
     scoresRef.on('value', snap=>{
       const scores = snap.val() || {};
       syncToggleButtons(room, scores);
@@ -913,7 +914,7 @@ async function setScoreRemote(btn) {
   const ci  = btn.dataset.ci;
   const pid = btn.dataset.pid;
   const val = parseInt(btn.dataset.val, 10);
-  await db.ref(`rooms/${currentCode}/scores/${ci}/${pid}`).set(val);
+  await db.ref(`${DB_PREFIX}/rooms/${currentCode}/scores/${ci}/${pid}`).set(val);
 }
 
 function syncToggleButtons(room, scores) {
@@ -950,7 +951,7 @@ function renderTotals(room, scores) {
 // ── SAVE SESSION ──────────────────────────────────────────────────
 async function saveSession() {
   if (!cachedRoom) return;
-  const scoresSnap = await db.ref(`rooms/${currentCode}/scores`).once('value');
+  const scoresSnap = await db.ref(`${DB_PREFIX}/rooms/${currentCode}/scores`).once('value');
   const scores     = scoresSnap.val() || {};
   const players    = cachedRoom.players    || {};
   const roundOrder = cachedRoom.roundOrder || Object.keys(players);
